@@ -16,5 +16,5 @@ set_io LED_STAT   B6
 set_io CLK D1
 
 #Buttons
-set_io -pullup yes  BUTTON[0]   B3
-set_io -pullup yes  BUTTON[1]   A3
+set_io -pullup yes  BUTTON[0]   C5  #RESET button
+set_io -pullup yes  BUTTON[1]   E2  #BUTTON count
