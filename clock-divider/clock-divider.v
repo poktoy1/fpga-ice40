@@ -6,7 +6,7 @@ module ClockDivider #(
     input  wire CLK
 );
     localparam HALF_CLOCK_SPEED = CLOCK_SPEED_MHZ / 2;
-    localparam SEC = NS_DELAY - 1;
+    localparam SEC = NS_DELAY;
     reg [$clog2(CLOCK_SPEED_MHZ):0] counter = 0;
     reg [$clog2(SEC):0] sec = 0;
 
@@ -18,9 +18,10 @@ module ClockDivider #(
             sec <= sec + 1;
         end else if (sec == SEC) begin
             sec <= 0;
-            out <= ~out;
+            out <= 1'b1;
         end else begin
             counter <= counter + 1;
+            out <= 1'b0;
         end
     end
 

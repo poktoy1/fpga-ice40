@@ -1,6 +1,6 @@
 `include "../st7735/st7735.v"
 `include "../clock-divider/clock-divider.v"
-`timescale 100 ns / 10 ps
+`timescale 1 ns / 10 ps
 
 module oled_tb ();
 
@@ -14,8 +14,7 @@ module oled_tb ();
     wire lcd_clk;
     wire reset;
 
-    wire lcd_delay_out = 0;
-
+    
     always begin
         #41.665
         clk = ~clk;
@@ -32,18 +31,9 @@ module oled_tb ();
     );
 
 
-    ClockDivider #(
-        .CLOCK_SPEED_MHZ(12),
-        .NS_DELAY(10)
-    ) _lcd_delay (
-        .CLK(clk),
-        .out(lcd_delay_out)
-    );
-
-
     initial begin
         $dumpfile("oled_tb.vcd");
-        $dumpvars(0, oled_tb);
+        $dumpvars(2, oled_tb);
 
         #(DURATION)
         $display("Finish");
