@@ -80,7 +80,7 @@ module ButtonCounter (
 
     ClockDivider #(
         .CLOCK_SPEED_MHZ(12),
-        .NS_DELAY(1000000)
+        .US_DELAY(1000000)
     ) _clock_divider (
         .out(clock_divider_out),
         .CLK(CLK)
@@ -88,7 +88,7 @@ module ButtonCounter (
 
     ClockDivider #(
         .CLOCK_SPEED_MHZ(12),
-        .NS_DELAY(1000000)
+        .US_DELAY(1000000)
     ) _blinker (
         .out(LED_STAT),
         .CLK(CLK)
@@ -96,7 +96,7 @@ module ButtonCounter (
 
     ClockDivider #(
         .CLOCK_SPEED_MHZ(12),
-        .NS_DELAY(30000)
+        .US_DELAY(30000)
     ) _button_debouncer (
         .out(button_debouncer),
         .CLK(CLK)
