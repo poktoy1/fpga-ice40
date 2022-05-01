@@ -12,7 +12,7 @@ module ST7735 #(
 );
 
 
-
+    localparam MAX = 7;
     localparam STATE_IDLE = 3'b000;
     localparam STATE_INIT = 3'b001;
     localparam STATE_TRICKLE_RESET = 3'b010;
@@ -25,7 +25,7 @@ module ST7735 #(
 
     wire lcd_delay_out = 1'b0;
     reg [7:0] data;
-    reg [2:0] data_count = 0;
+    reg [3:0] data_count = 0;
 
     reg reset_delay = DISABLE;
     reg delay_status = DISABLE;
@@ -38,16 +38,15 @@ module ST7735 #(
     end
 
 
-    task Write_reg(inout [7:0] spi_data, inout [2:0] count, output mosi);
-
-
-        localparam MAX = 7;
+    task Write_reg(inout [7:0] spi_data, inout [3:0] count, output mosi, output dc);
 
         begin
 
-            count = count + 1;
+
             spi_data = {spi_data[6:0], spi_data[7]};
-            mosi = spi_data[7];
+            count = count + 1;
+            dc = (count > MAX);
+
 
         end
 
@@ -61,7 +60,13 @@ module ST7735 #(
         .out(lcd_delay_out)
     );
 
+    always @(*) begin
+        MOSI <= data[7];
+    end
+
     always @(posedge SYSTEM_CLK) begin
+
+
         case (oled_state)
             STATE_IDLE: begin
                 if (init_done == DISABLE) begin
@@ -75,25 +80,30 @@ module ST7735 #(
             end
 
             STATE_TRICKLE_RESET: begin
-                RESET <= ENABLE;
+
                 if (delay_count >= 1) begin
                     RESET <= DISABLE;
                     delay_status <= DISABLE;
-                    data <= 8'h11;
+                    data <= 8'h81;
+                    DC <= DISABLE;
                     oled_state <= STATE_WRITE_REG;
+                end else begin
+                    RESET <= ENABLE;
                 end
             end
 
             STATE_WRITE_REG: begin
-                if (data_count >= 7) begin
+                if (data_count >= MAX) begin
+                    
                     oled_state <= STATE_WRITE_REG_DONE;
                 end
-                Write_reg(data, data_count, MOSI);
+
+                Write_reg(data, data_count, MOSI, DC);
 
             end
             STATE_WRITE_REG_DONE: begin
 
-                
+
             end
 
 
