@@ -13,12 +13,12 @@ module ST7735 #(
 
 
     localparam MAX = 7;
-    localparam STATE_IDLE = 3'b000;
+    localparam STATE_IDLE = 8'b0000000;
     localparam STATE_INIT = 8'b00000001;
     localparam STATE_TRICKLE_RESET = 8'b00000010;
-    localparam STATE_WRITE_REG = 8'b00000100;
-    localparam STATE_PREPARE_WRITE_REG = 8'b00001000;
-    localparam STATE_WRITE_REG_DONE = 8'b00010000;
+    localparam STATE_WRITE_REG = 8'b00000011;
+    localparam STATE_PREPARE_WRITE_REG = 8'b00000100;
+    localparam STATE_WRITE_REG_DONE = 8'b00000101;
     // localparam STATE_SHIFT_DATA = 3'b101;
     // localparam STATE_SHIFT_DATA_DONE = 3'b110;
     localparam ENABLE = 1'b1;
@@ -39,7 +39,7 @@ module ST7735 #(
     end
 
 
-    task Write_reg(inout [7:0] spi_data, inout [3:0] count, output mosi);
+    task Write_reg(inout [7:0] spi_data, inout [3:0] count);
 
         begin
             spi_data = {spi_data[6:0], spi_data[7]};
