@@ -25,15 +25,18 @@ module ST7735 #(
     localparam DISABLE = 1'b0;
 
     wire lcd_delay_outs;
-    reg [7:0] data;
+    reg [7:0] data = 8'h00;
     reg [3:0] data_count = 0;
 
     reg delay_status = DISABLE;
     reg [7:0] oled_state = STATE_IDLE;
     reg init_done = DISABLE;
 
+    reg [7:0] config_b1[4:0];
+
     initial begin
         RESET = DISABLE;
+        $readmemh("b1_config.dat", config_b1);
     end
 
 
@@ -57,6 +60,7 @@ module ST7735 #(
 
     always @(*) begin
         MOSI <= data[7];
+        LCD_CLK <= data_count[0];
     end
 
     always @(posedge SYSTEM_CLK) begin
