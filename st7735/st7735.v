@@ -16,21 +16,19 @@ module ST7735 #(
     localparam STATE_IDLE = 8'b0000000;
     localparam STATE_INIT = 8'b00000001;
     localparam STATE_TRICKLE_RESET = 8'b00000010;
-    localparam STATE_WRITE_REG = 8'b00000011;
-    localparam STATE_PREPARE_WRITE_REG = 8'b00000100;
-    localparam STATE_WRITE_REG_DONE = 8'b00000101;
-    // localparam STATE_SHIFT_DATA = 3'b101;
-    // localparam STATE_SHIFT_DATA_DONE = 3'b110;
+    localparam STATE_PREPARE_WRITE_REG = 8'b00000011;
+    localparam STATE_WRITE_REG = 8'b00000100;
+    localparam STATE_DELAY_120MS = 8'b00000101;
+    localparam STATE_WRITE_CONFIGURATIONS = 8'b00000110;
+
     localparam ENABLE = 1'b1;
     localparam DISABLE = 1'b0;
 
-    wire lcd_delay_out = 1'b0;
+    wire lcd_delay_outs;
     reg [7:0] data;
     reg [3:0] data_count = 0;
 
-    reg reset_delay = DISABLE;
     reg delay_status = DISABLE;
-    reg delay_count = DISABLE;
     reg [7:0] oled_state = STATE_IDLE;
     reg init_done = DISABLE;
 
@@ -48,12 +46,13 @@ module ST7735 #(
 
     endtask
 
-    ClockDivider #(
+    DelayCounter #(
         .CLOCK_SPEED_MHZ(CLOCK_SPEED_MHZ),
         .US_DELAY(2)
     ) _lcd_delay (
-        .CLK(SYSTEM_CLK),
-        .out(lcd_delay_out)
+        .CLK  (SYSTEM_CLK),
+        .out  (lcd_delay_out),
+        .start(delay_status)
     );
 
     always @(*) begin
@@ -77,10 +76,9 @@ module ST7735 #(
 
             STATE_TRICKLE_RESET: begin
 
-                if (delay_count >= 1) begin
+                if (lcd_delay_out) begin
                     RESET <= DISABLE;
                     delay_status <= DISABLE;
-
                     oled_state <= STATE_PREPARE_WRITE_REG;
                 end else begin
                     RESET <= ENABLE;
@@ -98,32 +96,31 @@ module ST7735 #(
                 if (data_count >= MAX) begin
                     DC <= ENABLE;
                     CS <= ENABLE;
-                    oled_state <= STATE_WRITE_REG_DONE;
-                end
-                Write_reg(data, data_count, MOSI);
-            end
-            STATE_WRITE_REG_DONE: begin
+                    if (init_done == DISABLE) begin
+                        oled_state <= STATE_DELAY_120MS;
+                    end
 
+                end
+                Write_reg(data, data_count);
+            end
+            STATE_DELAY_120MS: begin
+
+                delay_status <= ENABLE;
+                if (lcd_delay_out) begin
+
+                    delay_status <= DISABLE;
+                    oled_state   <= STATE_WRITE_CONFIGURATIONS;
+                end
+
+            end
+
+            STATE_WRITE_CONFIGURATIONS: begin
 
             end
 
 
         endcase
     end
-
-    always @(posedge lcd_delay_out, posedge reset_delay) begin
-        if (reset_delay == ENABLE) begin
-            delay_count <= 0;
-        end else begin
-            if (delay_status == ENABLE) begin
-                delay_count <= delay_count + 1;
-            end else begin
-                delay_count <= 0;
-            end
-        end
-
-    end
-
 
 
 endmodule
