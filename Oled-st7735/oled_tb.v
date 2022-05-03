@@ -4,7 +4,7 @@
 
 module oled_tb ();
 
-    localparam DURATION = 10000;
+    localparam DURATION = 70000;
 
    
     reg clk = 1;
