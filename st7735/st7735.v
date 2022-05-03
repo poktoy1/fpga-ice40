@@ -87,8 +87,14 @@ module ST7735 #(
 
     always @(*) begin
         MOSI <= data[7];
-        LCD_CLK <= data_count[0];
+        // LCD_CLK <= data_count[0];
+        if (data_count) begin
+            LCD_CLK <= ~SYSTEM_CLK;
+        end else begin
+            LCD_CLK <= ENABLE;
+        end
     end
+
 
     always @(posedge SYSTEM_CLK) begin
 
