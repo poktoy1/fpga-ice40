@@ -29,7 +29,12 @@ module ST7735 #(
     localparam CONFIG_B3 = 8'b00000010;
     localparam CONFIG_B4 = 8'b00000011;
     localparam CONFIG_C0 = 8'b00000100;
-    localparam CONFIG_DONE = 8'b00000101;
+    localparam CONFIG_C1 = 8'b00000101;
+    localparam CONFIG_C2 = 8'b00000110;
+    localparam CONFIG_C3 = 8'b00000111;
+    localparam CONFIG_C4 = 8'b00001000;
+    localparam CONFIG_C5 = 8'b00001001;
+    localparam CONFIG_DONE = 8'b00001111;
 
     localparam ENABLE = 1'b1;
     localparam DISABLE = 1'b0;
@@ -51,6 +56,11 @@ module ST7735 #(
     reg [7:0] config_b3[6:0];
     reg [7:0] config_b4[1:0];
     reg [7:0] config_c0[3:0];
+    reg [7:0] config_c1[1:0];
+    reg [7:0] config_c2[2:0];
+    reg [7:0] config_c3[2:0];
+    reg [7:0] config_c4[2:0];
+    reg [7:0] config_c5[1:0];
     reg [7:0] config_cnt = CONFIG_B1;
 
     integer i;
@@ -62,6 +72,11 @@ module ST7735 #(
         $readmemh("b3_config.dat", config_b3);
         $readmemh("b4_config.dat", config_b4);
         $readmemh("c0_config.dat", config_c0);
+        $readmemh("c1_config.dat", config_c1);
+        $readmemh("c2_config.dat", config_c2);
+        $readmemh("c3_config.dat", config_c3);
+        $readmemh("c4_config.dat", config_c4);
+        $readmemh("c5_config.dat", config_c5);
     end
 
 
@@ -150,6 +165,7 @@ module ST7735 #(
 
                 end
                 write_bus(data, data_count);
+
             end
             STATE_DELAY_120MS: begin
 
@@ -166,32 +182,53 @@ module ST7735 #(
                 init_write_config <= ENABLE;
                 case (config_cnt)
                     CONFIG_B1: begin
-                        next_data_count_max <= 3;
+                        next_data_count_max <= 4;
                         data <= config_b1[next_data_count];
 
                     end
                     CONFIG_B2: begin
-                        next_data_count_max <= 3;
+                        next_data_count_max <= 4;
                         data <= config_b2[next_data_count];
 
                     end
                     CONFIG_B3: begin
-                        next_data_count_max <= 6;
+                        next_data_count_max <= 7;
                         data <= config_b3[next_data_count];
 
                     end
                     CONFIG_B4: begin
-                        next_data_count_max <= 1;
+                        next_data_count_max <= 2;
                         data <= config_b4[next_data_count];
                     end
                     CONFIG_C0: begin
-                        next_data_count_max <= 3;
+                        next_data_count_max <= 4;
                         data <= config_c0[next_data_count];
+                    end
+                    CONFIG_C1: begin
+                        next_data_count_max <= 2;
+                        data <= config_c1[next_data_count];
+                    end
+                    CONFIG_C2: begin
+                        next_data_count_max <= 3;
+                        data <= config_c2[next_data_count];
+                    end
+                    CONFIG_C3: begin
+                        next_data_count_max <= 3;
+                        data <= config_c3[next_data_count];
+                    end
+                    CONFIG_C4: begin
+                        next_data_count_max <= 3;
+                        data <= config_c4[next_data_count];
+                    end
+                    CONFIG_C5: begin
+                        next_data_count_max <= 2;
+                        data <= config_c5[next_data_count];
                     end
 
 
                 endcase
                 oled_state <= STATE_BITBANG_BUS;
+
 
             end
 
@@ -208,17 +245,18 @@ module ST7735 #(
                         oled_state <= STATE_PREPARE_WRITE_REG;
                     end
                 end else if (next_data_count == 0) begin
-
+                    $display("data:%02h,next_data_count:%02h,max:%02h", data, next_data_count,
+                             next_data_count_max);
                     next_data_count <= next_data_count + 1;
                     oled_state <= STATE_PREPARE_WRITE_REG;
                 end else begin
-
+                    $display("data:%02h,next_data_count:%02h,max:%02h", data, next_data_count,
+                             next_data_count_max);
                     next_data_count <= next_data_count + 1;
                     oled_state <= STATE_PREPARE_WRITE_DATA;
                 end
 
-                $display("data:%02h,next_data_count:%02h,max:%02h", data, next_data_count,
-                         next_data_count_max);
+
 
 
             end
