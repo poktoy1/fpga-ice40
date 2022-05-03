@@ -53,18 +53,18 @@ module ST7735 #(
     reg init_done = DISABLE;
     reg init_write_config = DISABLE;
 
-    reg [7:0] config_b1[3:0];
-    reg [7:0] config_b2[3:0];
-    reg [7:0] config_b3[6:0];
-    reg [7:0] config_b4[1:0];
-    reg [7:0] config_c0[3:0];
-    reg [7:0] config_c1[1:0];
-    reg [7:0] config_c2[2:0];
-    reg [7:0] config_c3[2:0];
-    reg [7:0] config_c4[2:0];
-    reg [7:0] config_c5[1:0];
-    reg [7:0] config_e0[16:0];
-    reg [7:0] config_e1[16:0];
+    reg [7:0] config_b1[0:3];
+    reg [7:0] config_b2[0:3];
+    reg [7:0] config_b3[0:6];
+    reg [7:0] config_b4[0:1];
+    reg [7:0] config_c0[0:3];
+    reg [7:0] config_c1[0:1];
+    reg [7:0] config_c2[0:2];
+    reg [7:0] config_c3[0:2];
+    reg [7:0] config_c4[0:2];
+    reg [7:0] config_c5[0:1];
+    reg [7:0] config_e0[0:16];
+    reg [7:0] config_e1[0:16];
     reg [7:0] config_cnt = CONFIG_B1;
 
     integer i;
