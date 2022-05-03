@@ -34,6 +34,8 @@ module ST7735 #(
     localparam CONFIG_C3 = 8'b00000111;
     localparam CONFIG_C4 = 8'b00001000;
     localparam CONFIG_C5 = 8'b00001001;
+    localparam CONFIG_E0 = 8'b00001010;
+    localparam CONFIG_E1 = 8'b00001011;
     localparam CONFIG_DONE = 8'b00001111;
 
     localparam ENABLE = 1'b1;
@@ -43,8 +45,8 @@ module ST7735 #(
     reg [7:0] data = 8'h00;
     reg [3:0] data_count = 0;
 
-    reg [3:0] next_data_count = 0;
-    reg [3:0] next_data_count_max = 0;
+    reg [$clog2(17):0] next_data_count = 0;
+    reg [$clog2(17):0] next_data_count_max = 0;
 
     reg delay_status = DISABLE;
     reg [7:0] oled_state = STATE_IDLE;
@@ -61,6 +63,8 @@ module ST7735 #(
     reg [7:0] config_c3[2:0];
     reg [7:0] config_c4[2:0];
     reg [7:0] config_c5[1:0];
+    reg [7:0] config_e0[16:0];
+    reg [7:0] config_e1[16:0];
     reg [7:0] config_cnt = CONFIG_B1;
 
     integer i;
@@ -77,6 +81,7 @@ module ST7735 #(
         $readmemh("c3_config.dat", config_c3);
         $readmemh("c4_config.dat", config_c4);
         $readmemh("c5_config.dat", config_c5);
+        $readmemh("e0_config.dat", config_e0);
     end
 
 
@@ -224,6 +229,14 @@ module ST7735 #(
                         next_data_count_max <= 2;
                         data <= config_c5[next_data_count];
                     end
+                    CONFIG_E0: begin
+                        next_data_count_max <= 17;
+                        data <= config_e0[next_data_count];
+                    end
+                    CONFIG_E1: begin
+                        next_data_count_max <= 17;
+                        data <= config_e1[next_data_count];
+                    end 
 
 
                 endcase
