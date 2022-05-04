@@ -12,16 +12,14 @@ module ClockDivider #(
 
     always @(posedge CLK) begin
 
-
         if (counter == HALF_CLOCK_SPEED) begin
             counter <= 0;
             sec <= sec + 1;
         end else if (sec == SEC) begin
             sec <= 0;
-            out <= 1'b1;
+            out <= ~out;
         end else begin
             counter <= counter + 1;
-            out <= 1'b0;
         end
     end
 
