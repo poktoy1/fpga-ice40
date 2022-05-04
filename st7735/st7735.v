@@ -168,8 +168,10 @@ module ST7735 #(
                         oled_state <= STATE_DELAY_120MS;
                     end
 
+                end else begin
+                    write_bus(data, data_count);
                 end
-                write_bus(data, data_count);
+
 
             end
             STATE_DELAY_120MS: begin
@@ -236,7 +238,7 @@ module ST7735 #(
                     CONFIG_E1: begin
                         next_data_count_max <= 17;
                         data <= config_e1[next_data_count];
-                    end 
+                    end
 
 
                 endcase
