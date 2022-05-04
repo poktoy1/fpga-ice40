@@ -53,7 +53,7 @@ module ST7735 #(
     reg [7:0] data = 8'h00;
     reg [3:0] data_count = 0;
 
-    reg [$clog2(17):0] next_data_count = 0;
+    reg [$clog2(17):0] next_data_count;
     reg [$clog2(17):0] next_data_count_max = 0;
 
     reg delay_status = DISABLE;
@@ -159,6 +159,8 @@ module ST7735 #(
                     RESET <= DISABLE;
                     delay_status <= DISABLE;
                     data <= 8'h11;
+                    next_data_count <= 0;
+                    next_data_count_max <= 1;
                     oled_state <= STATE_PREPARE_WRITE_REG;
                 end else begin
                     RESET <= ENABLE;
@@ -301,6 +303,7 @@ module ST7735 #(
                     oled_state <= STATE_WRITE_CONFIGURATIONS_DONE;
                 end else begin
                     oled_state <= STATE_BITBANG_BUS;
+                    // $display("next_data_count:%02h", next_data_count);
                 end
 
 
@@ -311,13 +314,14 @@ module ST7735 #(
 
                 if (next_data_count >= next_data_count_max) begin
                     next_data_count <= 0;
+                    next_data_count_max <= 0;
                     data <= 0;
                     data_count <= 0;
                     if (config_cnt >= CONFIG_DONE) begin
                         oled_state <= STATE_WRITE_CONFIGURATIONS_DONE;
                     end else begin
                         config_cnt <= config_cnt + 1;
-                        oled_state <= STATE_PREPARE_WRITE_REG;
+                        oled_state <= STATE_WRITE_CONFIGURATIONS;
                     end
                 end else if (next_data_count == 0) begin
                     $display("data:%02h,next_data_count:%02h,max:%02h", data, next_data_count,
