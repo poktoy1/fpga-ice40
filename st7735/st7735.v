@@ -36,7 +36,9 @@ module ST7735 #(
     localparam CONFIG_C5 = 8'b00001001;
     localparam CONFIG_E0 = 8'b00001010;
     localparam CONFIG_E1 = 8'b00001011;
-    localparam CONFIG_DONE = 8'b00001111;
+    localparam CONFIG_FC = 8'b00001100;
+    localparam CONFIG_3A = 8'b00001101;
+    localparam CONFIG_DONE = 8'b00001110;
 
     localparam ENABLE = 1'b1;
     localparam DISABLE = 1'b0;
@@ -65,6 +67,8 @@ module ST7735 #(
     reg [7:0] config_c5[0:1];
     reg [7:0] config_e0[0:16];
     reg [7:0] config_e1[0:16];
+    reg [7:0] config_fc[0:1];
+    reg [7:0] config_3a[0:1];
     reg [7:0] config_cnt = CONFIG_B1;
 
     integer i;
@@ -82,6 +86,10 @@ module ST7735 #(
         $readmemh("c4_config.dat", config_c4);
         $readmemh("c5_config.dat", config_c5);
         $readmemh("e0_config.dat", config_e0);
+        $readmemh("e1_config.dat", config_e1);
+        $readmemh("fc_config.dat", config_fc);
+        $readmemh("3a_config.dat", config_3a);
+
     end
 
 
@@ -239,10 +247,25 @@ module ST7735 #(
                         next_data_count_max <= 17;
                         data <= config_e1[next_data_count];
                     end
+                    CONFIG_FC: begin
+                        next_data_count_max <= 2;
+                        data <= config_fc[next_data_count];
+                    end
+                    CONFIG_3A: begin
+                        next_data_count_max <= 2;
+                        data <= config_3a[next_data_count];
+                    end
+
 
 
                 endcase
-                oled_state <= STATE_BITBANG_BUS;
+
+                if (config_cnt >= CONFIG_DONE) begin
+                    oled_state <= STATE_WRITE_CONFIGURATIONS_DONE;
+                end else begin
+                    oled_state <= STATE_BITBANG_BUS;
+                end
+
 
 
             end
@@ -270,13 +293,12 @@ module ST7735 #(
                     next_data_count <= next_data_count + 1;
                     oled_state <= STATE_PREPARE_WRITE_DATA;
                 end
-
-
-
-
             end
 
             STATE_WRITE_CONFIGURATIONS_DONE: begin
+                init_write_config <= DISABLE;
+                DC <= ENABLE;
+                CS <= ENABLE;
 
             end
 
