@@ -4,12 +4,12 @@
 
 module oled_tb ();
 
-    localparam DURATION = 90000;
+    localparam DURATION = 200000;
 
    
     reg clk = 1;
     wire cs = 1;
-    wire mosi = 1;
+    wire mosi;
     wire dc = 1;
     wire lcd_clk = 1;
     wire reset = 1;

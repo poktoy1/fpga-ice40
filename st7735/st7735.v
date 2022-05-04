@@ -38,7 +38,13 @@ module ST7735 #(
     localparam CONFIG_E1 = 8'b00001011;
     localparam CONFIG_FC = 8'b00001100;
     localparam CONFIG_3A = 8'b00001101;
-    localparam CONFIG_DONE = 8'b00001110;
+    localparam CONFIG_36 = 8'b00001110;
+    localparam CONFIG_21 = 8'b00001111;
+    localparam CONFIG_29 = 8'b00010000;
+    localparam CONFIG_2A = 8'b00010001;
+    localparam CONFIG_2B = 8'b00010010;
+    localparam CONFIG_2C = 8'b00010011;
+    localparam CONFIG_DONE = 8'b00010100;
 
     localparam ENABLE = 1'b1;
     localparam DISABLE = 1'b0;
@@ -69,6 +75,10 @@ module ST7735 #(
     reg [7:0] config_e1[0:16];
     reg [7:0] config_fc[0:1];
     reg [7:0] config_3a[0:1];
+    reg [7:0] config_36[0:1];
+    // reg [7:0] config_21[0:0];
+    reg [7:0] config_2a[0:4];
+    reg [7:0] config_2b[0:4];
     reg [7:0] config_cnt = CONFIG_B1;
 
     integer i;
@@ -89,6 +99,10 @@ module ST7735 #(
         $readmemh("e1_config.dat", config_e1);
         $readmemh("fc_config.dat", config_fc);
         $readmemh("3a_config.dat", config_3a);
+        $readmemh("36_config.dat", config_36);
+        // $readmemh("21_config.dat", config_21);
+        $readmemh("2a_config.dat", config_2a);
+        $readmemh("2b_config.dat", config_2b);
 
     end
 
@@ -255,7 +269,30 @@ module ST7735 #(
                         next_data_count_max <= 2;
                         data <= config_3a[next_data_count];
                     end
-
+                    CONFIG_36: begin
+                        next_data_count_max <= 2;
+                        data <= config_36[next_data_count];
+                    end
+                    CONFIG_21: begin
+                        next_data_count_max <= 1;
+                        data <= 8'h21;
+                    end
+                    CONFIG_29: begin
+                        next_data_count_max <= 1;
+                        data <= 8'h29;
+                    end
+                    CONFIG_2A: begin
+                        next_data_count_max <= 5;
+                        data <= config_2a[next_data_count];
+                    end
+                    CONFIG_2B: begin
+                        next_data_count_max <= 5;
+                        data <= config_2b[next_data_count];
+                    end
+                    CONFIG_2C: begin
+                        next_data_count_max <= 1;
+                        data <= 8'h2C;
+                    end
 
 
                 endcase
