@@ -118,7 +118,7 @@ module ST7735 #(
 
     DelayCounter #(
         .CLOCK_SPEED_MHZ(CLOCK_SPEED_MHZ),
-        .US_DELAY(2)
+        .US_DELAY(120000)
     ) _lcd_delay (
         .CLK  (SYSTEM_CLK),
         .out  (lcd_delay_out),
@@ -320,13 +320,13 @@ module ST7735 #(
                         oled_state <= STATE_WRITE_CONFIGURATIONS;
                     end
                 end else if (next_data_count == 0) begin
-                    $display("data:%02h,next_data_count:%02h,max:%02h", data, next_data_count,
-                             next_data_count_max);
+                    // $display("data:%02h,next_data_count:%02h,max:%02h", data, next_data_count,
+                            //  next_data_count_max);
                     next_data_count <= next_data_count + 1;
                     oled_state <= STATE_PREPARE_WRITE_REG;
                 end else begin
-                    $display("data:%02h,next_data_count:%02h,max:%02h", data, next_data_count,
-                             next_data_count_max);
+                    // $display("data:%02h,next_data_count:%02h,max:%02h", data, next_data_count,
+                            //  next_data_count_max);
                     next_data_count <= next_data_count + 1;
                     oled_state <= STATE_PREPARE_WRITE_DATA;
                 end

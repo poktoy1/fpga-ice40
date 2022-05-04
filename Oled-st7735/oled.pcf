@@ -6,4 +6,4 @@ set_io -pullup yes DC       E1
 set_io -pullup yes LCD_CLK  B1
 set_io -pullup yes RESET    A1
 
-set_io LED_STAT B6
+set_io LED_STAT             B6
