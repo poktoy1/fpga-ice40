@@ -49,7 +49,7 @@ module ST7735 #(
     localparam ENABLE = 1'b1;
     localparam DISABLE = 1'b0;
 
-    wire lcd_delay_outs;
+    wire lcd_delay_out;
     reg [7:0] data = 8'h00;
     reg [3:0] data_count = 0;
 
@@ -76,7 +76,6 @@ module ST7735 #(
     reg [7:0] config_fc[0:1];
     reg [7:0] config_3a[0:1];
     reg [7:0] config_36[0:1];
-    // reg [7:0] config_21[0:0];
     reg [7:0] config_2a[0:4];
     reg [7:0] config_2b[0:4];
     reg [7:0] config_cnt = CONFIG_B1;
@@ -100,7 +99,6 @@ module ST7735 #(
         $readmemh("fc_config.dat", config_fc);
         $readmemh("3a_config.dat", config_3a);
         $readmemh("36_config.dat", config_36);
-        // $readmemh("21_config.dat", config_21);
         $readmemh("2a_config.dat", config_2a);
         $readmemh("2b_config.dat", config_2b);
 
@@ -129,7 +127,6 @@ module ST7735 #(
 
     always @(*) begin
         MOSI <= data[7];
-        // LCD_CLK <= data_count[0];
         if (data_count) begin
             LCD_CLK <= ~SYSTEM_CLK;
         end else begin
@@ -303,7 +300,6 @@ module ST7735 #(
                     oled_state <= STATE_WRITE_CONFIGURATIONS_DONE;
                 end else begin
                     oled_state <= STATE_BITBANG_BUS;
-                    // $display("next_data_count:%02h", next_data_count);
                 end
 
 

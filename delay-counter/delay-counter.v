@@ -11,7 +11,7 @@ module DelayCounter #(
     reg [$clog2(CLOCK_SPEED_MHZ):0] counter = 0;
     reg [$clog2(SEC):0] sec = 0;
 
-    always @(posedge CLK, start) begin
+    always @(posedge CLK) begin
 
         if (start) begin
             if (counter == HALF_CLOCK_SPEED) begin

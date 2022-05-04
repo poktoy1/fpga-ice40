@@ -1,6 +1,6 @@
-set_io clk_25mhz      D1
+set_io  SYSTEM_CLK          D1
 
-set_io -pullup yes CS      B4
+set_io -pullup yes CS       B4
 set_io -pullup yes MOSI     B5
 set_io -pullup yes DC       E1
 set_io -pullup yes LCD_CLK  B1

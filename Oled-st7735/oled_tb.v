@@ -1,5 +1,5 @@
-`include "../st7735/st7735.v"
-`include "../delay-counter/delay-counter.v"
+// `include "../st7735/st7735.v"
+// `include "../delay-counter/delay-counter.v"
 `timescale 1 ns / 10 ps
 
 module oled_tb ();
