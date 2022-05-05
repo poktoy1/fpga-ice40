@@ -99,11 +99,14 @@ module ST7735 #(
     reg [15:0] color = 16'hffff;
     reg [$clog2(WIDTH):0] color_x = 0;
     reg [$clog2(HEIGHT):0] color_y = 0;
+    reg color_cursor = DISABLE;
 
     integer i;
 
     initial begin
         RESET = ENABLE;
+        CS = ENABLE;
+        DC = ENABLE;
         $readmemh("b1_config.dat", config_b1);
         $readmemh("b2_config.dat", config_b2);
         $readmemh("b3_config.dat", config_b3);
@@ -174,6 +177,7 @@ module ST7735 #(
 
                 if (lcd_delay_out) begin
                     RESET <= ENABLE;
+                    CS <= ENABLE;
                     delay_status <= DISABLE;
                     data <= 8'h11;
                     next_data_count <= 0;
@@ -181,6 +185,7 @@ module ST7735 #(
                     oled_state <= STATE_PREPARE_WRITE_REG;
                 end else begin
                     RESET <= DISABLE;
+                    CS <= DISABLE;
                 end
             end
 
@@ -199,19 +204,14 @@ module ST7735 #(
 
             STATE_WRITE_BUS: begin
                 if (data_count >= MAX) begin
-                    DC <= ENABLE;
-                    CS <= ENABLE;
+                    if (color_cursor == DISABLE) begin
+                        DC <= ENABLE;
+                        CS <= ENABLE;
+                    end
+
                     data_count <= 0;
                     data <= 0;
 
-                    // if (init_write_config) begin
-                    //     oled_state <= STATE_WRITE_CONFIGURATIONS;
-
-                    // end else if (init_done) begin
-                    //     oled_state <= STATE_SET_CURSOR;
-                    // end else begin
-                    //     oled_state <= STATE_DELAY_120MS;
-                    // end
                     if (init_done) begin
                         oled_state <= STATE_SET_CURSOR;
                     end else if (init_write_config) begin
@@ -403,7 +403,7 @@ module ST7735 #(
                     end
                     CURSOR_X_END: begin
                         next_data_count_max <= 1;
-                        data <= WIDTH;
+                        data <= WIDTH + 1;
                         oled_state <= STATE_PREPARE_WRITE_DATA;
                         cursor_cnt <= cursor_cnt + 1;
                     end
@@ -421,11 +421,12 @@ module ST7735 #(
                     end
                     CURSOR_Y_END: begin
                         next_data_count_max <= 1;
-                        data <= HEIGHT;
+                        data <= HEIGHT + 26;
                         oled_state <= STATE_PREPARE_WRITE_DATA;
                         cursor_cnt <= cursor_cnt + 1;
                     end
                     CURSOR_COLOR_MSB: begin
+                        color_cursor <= ENABLE;
                         next_data_count_max <= 1;
                         data <= color[15:8];
                         oled_state <= STATE_PREPARE_WRITE_DATA;
@@ -436,15 +437,16 @@ module ST7735 #(
                         data <= color[7:0];
                         oled_state <= STATE_PREPARE_WRITE_DATA;
                         color_x <= color_x + 1;
-                        if (color_x >= 10) begin
+                        if (color_x >= WIDTH) begin
                             color_x <= 0;
                             color_y <= color_y + 1;
                         end
-                        if (color_y >= 10) begin
+                        if (color_y >= HEIGHT) begin
                             color_y <= 0;
                             cursor_cnt <= cursor_cnt + 1;
                         end else begin
                             cursor_cnt <= CURSOR_COLOR_MSB;
+                            CS <= ENABLE;
                         end
 
                     end
