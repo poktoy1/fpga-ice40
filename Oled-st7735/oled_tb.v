@@ -4,15 +4,15 @@
 
 module oled_tb ();
 
-    localparam DURATION = 200000;
+    localparam DURATION = 1000000;
 
    
     reg clk = 1;
-    wire cs = 1;
+    wire cs;
     wire mosi;
-    wire dc = 1;
-    wire lcd_clk = 1;
-    wire reset = 1;
+    wire dc;
+    wire lcd_clk;
+    wire reset;
 
     
     always begin
@@ -21,7 +21,7 @@ module oled_tb ();
     end
 
 
-    ST7735 _st7735_tb(
+    ST7735 #(.DELAY_US(2)) _st7735_tb (
         .SYSTEM_CLK(clk),
         .CS(cs),
         .MOSI(mosi),
