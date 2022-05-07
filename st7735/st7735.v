@@ -60,8 +60,8 @@ module ST7735 #(
     localparam CURSOR_COLOR_LSB = 4'b111;
 
 
-    localparam ENABLE = 1'b1;
-    localparam DISABLE = 1'b0;
+    localparam HIGH = 1'b1;
+    localparam LOW = 1'b0;
 
     wire lcd_delay_out;
     reg [7:0] data = 8'h00;
@@ -70,10 +70,10 @@ module ST7735 #(
     reg [$clog2(17):0] next_data_count;
     reg [$clog2(17):0] next_data_count_max = 0;
 
-    reg delay_status = DISABLE;
+    reg delay_status = LOW;
     reg [7:0] oled_state = STATE_IDLE;
-    reg init_done = DISABLE;
-    reg init_write_config = DISABLE;
+    reg init_done = LOW;
+    reg init_write_config = LOW;
 
     reg [7:0] config_b1[0:3];
     reg [7:0] config_b2[0:3];
@@ -99,14 +99,16 @@ module ST7735 #(
     reg [15:0] color = 16'hffff;
     reg [$clog2(WIDTH):0] color_x = 0;
     reg [$clog2(HEIGHT):0] color_y = 0;
-    reg color_cursor = DISABLE;
+    reg color_cursor = LOW;
 
     integer i;
 
     initial begin
-        RESET = ENABLE;
-        CS = ENABLE;
-        DC = ENABLE;
+        CS = HIGH;
+        MOSI = HIGH;
+        DC = HIGH;
+        LCD_CLK = HIGH;
+        RESET = HIGH;
         $readmemh("b1_config.dat", config_b1);
         $readmemh("b2_config.dat", config_b2);
         $readmemh("b3_config.dat", config_b3);
@@ -128,10 +130,11 @@ module ST7735 #(
     end
 
 
-    task write_bus(inout [7:0] spi_data, inout [3:0] count);
+    task write_bus(inout [7:0] spi_data, inout [3:0] count, output mosi);
 
         begin
             spi_data = {spi_data[6:0], spi_data[7]};
+            mosi = spi_data[7];
             count = count + 1;
         end
 
@@ -148,65 +151,72 @@ module ST7735 #(
         .start(delay_status)
     );
 
-    always @(*) begin
-        MOSI <= data[7];
-        if (data_count) begin
-            LCD_CLK <= SYSTEM_CLK;
-        end else begin
-            LCD_CLK <= ENABLE;
-        end
+    // always @(*) begin
+    //     MOSI <= data[7];
+    //     if (CS == LOW) begin
+    //         LCD_CLK <= SYSTEM_CLK;
+    //     end else begin
+    //         LCD_CLK <= HIGH;
+    //     end
+    // end
+
+    always @(posedge SYSTEM_CLK) begin
+
+        LCD_CLK = ~LCD_CLK;
+
+
     end
 
 
-    always @(posedge SYSTEM_CLK) begin
+    always @(posedge LCD_CLK) begin
 
 
         case (oled_state)
             STATE_IDLE: begin
-                if (init_done == DISABLE) begin
+                if (init_done == LOW) begin
                     oled_state <= STATE_INIT;
                 end
 
             end
             STATE_INIT: begin
-                delay_status <= ENABLE;
+                delay_status <= HIGH;
                 oled_state   <= STATE_TRICKLE_RESET;
             end
 
             STATE_TRICKLE_RESET: begin
 
                 if (lcd_delay_out) begin
-                    RESET <= ENABLE;
-                    CS <= ENABLE;
-                    delay_status <= DISABLE;
+                    RESET <= HIGH;
+                    CS <= HIGH;
+                    delay_status <= LOW;
                     data <= 8'h11;
                     next_data_count <= 0;
                     next_data_count_max <= 1;
                     oled_state <= STATE_PREPARE_WRITE_REG;
                 end else begin
-                    RESET <= DISABLE;
-                    CS <= DISABLE;
+                    RESET <= LOW;
+                    CS <= LOW;
                 end
             end
 
             STATE_PREPARE_WRITE_REG: begin
 
-                DC <= DISABLE;
-                CS <= DISABLE;
+                DC <= LOW;
+                CS <= LOW;
                 oled_state <= STATE_WRITE_BUS;
             end
 
             STATE_PREPARE_WRITE_DATA: begin
-                DC <= ENABLE;
-                CS <= DISABLE;
+                DC <= HIGH;
+                CS <= LOW;
                 oled_state <= STATE_WRITE_BUS;
             end
 
             STATE_WRITE_BUS: begin
                 if (data_count >= MAX) begin
-                    if (color_cursor == DISABLE) begin
-                        DC <= ENABLE;
-                        CS <= ENABLE;
+                    if (color_cursor == LOW) begin
+                        DC <= HIGH;
+                        CS <= HIGH;
                     end
 
                     data_count <= 0;
@@ -222,24 +232,24 @@ module ST7735 #(
 
 
                 end else begin
-                    write_bus(data, data_count);
+                    write_bus(data, data_count, MOSI);
                 end
 
 
             end
             STATE_DELAY_120MS: begin
 
-                delay_status <= ENABLE;
+                delay_status <= HIGH;
                 if (lcd_delay_out) begin
 
-                    delay_status <= DISABLE;
+                    delay_status <= LOW;
                     oled_state   <= STATE_WRITE_CONFIGURATIONS;
                 end
 
             end
 
             STATE_WRITE_CONFIGURATIONS: begin
-                init_write_config <= ENABLE;
+                init_write_config <= HIGH;
                 case (config_cnt)
                     CONFIG_B1: begin
                         next_data_count_max <= 4;
@@ -375,10 +385,10 @@ module ST7735 #(
             end
 
             STATE_WRITE_CONFIGURATIONS_DONE: begin
-                init_write_config <= DISABLE;
-                init_done <= ENABLE;
-                DC <= ENABLE;
-                CS <= ENABLE;
+                init_write_config <= LOW;
+                init_done <= HIGH;
+                DC <= HIGH;
+                CS <= HIGH;
                 data <= 0;
                 data_count <= 0;
                 next_data_count <= 0;
@@ -426,7 +436,7 @@ module ST7735 #(
                         cursor_cnt <= cursor_cnt + 1;
                     end
                     CURSOR_COLOR_MSB: begin
-                        color_cursor <= ENABLE;
+                        color_cursor <= HIGH;
                         next_data_count_max <= 1;
                         data <= color[15:8];
                         oled_state <= STATE_PREPARE_WRITE_DATA;
@@ -446,7 +456,7 @@ module ST7735 #(
                             cursor_cnt <= cursor_cnt + 1;
                         end else begin
                             cursor_cnt <= CURSOR_COLOR_MSB;
-                            CS <= ENABLE;
+                            CS <= HIGH;
                         end
 
                     end
