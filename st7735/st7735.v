@@ -118,18 +118,6 @@ module ST7735 #(
 
     end
 
-
-    // task write_bus(inout [7:0] spi_data, inout [3:0] count, output mosi);
-
-    //     begin
-    //         spi_data = {spi_data[6:0], spi_data[7]};
-    //         mosi = spi_data[7];
-    //         count = count + 1;
-    //     end
-
-    // endtask
-
-
     DelayCounter #(
         .CLOCK_SPEED_MHZ(CLOCK_SPEED_MHZ),
         // .US_DELAY(120000)
