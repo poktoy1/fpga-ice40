@@ -2,7 +2,7 @@
 
 module ST7735 #(
     parameter CLOCK_SPEED_MHZ = 12,
-    parameter DELAY_US = 120000,
+    parameter DELAY_US = 100000,
     parameter WIDTH = 160,
     parameter HEIGHT = 80
 ) (
@@ -88,6 +88,7 @@ module ST7735 #(
     reg [15:0] color = 16'h0f0f;
     reg [$clog2(WIDTH):0] color_x = 0;
     reg [$clog2(HEIGHT):0] color_y = 0;
+    reg [19:0] current_pixel;
 
     integer i;
 
@@ -157,19 +158,33 @@ module ST7735 #(
             STATE_IDLE: begin
                 if (init_done == LOW) begin
                     oled_state <= STATE_INIT;
+                    delay_status <= HIGH;
                 end
 
             end
             STATE_INIT: begin
-                delay_status <= HIGH;
-                oled_state   <= STATE_TRICKLE_RESET;
+                if (lcd_delay_out) begin
+                    RESET <= HIGH;
+                    // CS <= HIGH;
+                    delay_status <= HIGH;
+                    data <= 0;
+                    next_data_count <= 0;
+                    next_data_count_max <= 1;
+                    data_count <= 7;
+                    oled_state <= STATE_TRICKLE_RESET;
+                end else begin
+                    RESET <= LOW;
+                    CS <= LOW;
+                    data_count <= 7;
+                end
+                
             end
 
             STATE_TRICKLE_RESET: begin
 
                 if (lcd_delay_out) begin
-                    RESET <= HIGH;
-                    CS <= HIGH;
+                    // RESET <= HIGH;
+                    // CS <= HIGH;
                     delay_status <= LOW;
                     data <= 8'h11;
                     next_data_count <= 0;
@@ -187,8 +202,6 @@ module ST7735 #(
 
                 DC   <= LOW;
                 CS   <= LOW;
-                // data_count <= 7;
-                // oled_state <= STATE_WRITE_BUS;
                 MOSI <= data[data_count];
                 if (data_count == 0) begin
                     data_count <= 7;
@@ -390,16 +403,21 @@ module ST7735 #(
                 MOSI <= color[data_count];
                 if (data_count == 0) begin
                     data_count <= 15;
-                    color_x <= color_x + 1;
-                    if (color_x >= WIDTH) begin
-                        color_x <= 0;
-                        color_y <= color_y + 1;
-                    end
-                    if (color_y >= HEIGHT) begin
-                        color_x <= 0;
-                        color_y <= 0;
+                    current_pixel <= current_pixel + 1;
+                    if (current_pixel == WIDTH * HEIGHT) begin
+                        current_pixel <= 0;
                         oled_state <= STATE_WAITING_PIXEL;
                     end
+                    // color_x <= color_x + 1;
+                    // if (color_x >= WIDTH) begin
+                    //     color_x <= 0;
+                    //     color_y <= color_y + 1;
+                    // end
+                    // if (color_y >= HEIGHT) begin
+                    //     color_x <= 0;
+                    //     color_y <= 0;
+                    //     oled_state <= STATE_WAITING_PIXEL;
+                    // end
                 end
 
             end
