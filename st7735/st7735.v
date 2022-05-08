@@ -90,6 +90,7 @@ module ST7735 #(
     reg [$clog2(WIDTH):0] color_x = 0;
     reg [$clog2(HEIGHT):0] color_y = 0;
     reg [19:0] current_pixel;
+    reg init_frame_done = 0;
 
     integer i;
 
@@ -786,11 +787,42 @@ module ST7735 #(
                 data_count <= 15;
                 next_data_count <= 0;
                 next_data_count_max <= 0;
-
-                oled_state <= STATE_INIT_FRAME;
+                if(init_frame_done) begin
+                    oled_state <= STATE_WAITING_PIXEL;
+                end else begin
+                    oled_state <= STATE_INIT_FRAME;
+                end
+                
             end
 
             STATE_INIT_FRAME: begin
+                DC   <= HIGH;
+                CS   <= LOW;
+                MOSI <= color[data_count];
+                if (data_count == 0) begin
+                    data_count <= 15;
+                    current_pixel <= current_pixel + 1;
+                    if (current_pixel == WIDTH * HEIGHT) begin
+                        current_pixel <= 0;
+                        config_cnt <= CONFIG_2A;
+                        oled_state <= STATE_WRITE_CONFIGURATIONS;
+                    end
+                    // color_x <= color_x + 1;
+                    // if (color_x >= WIDTH) begin
+                    //     color_x <= 0;
+                    //     color_y <= color_y + 1;
+                    // end
+                    // if (color_y >= HEIGHT) begin
+                    //     color_x <= 0;
+                    //     color_y <= 0;
+                    //     oled_state <= STATE_WAITING_PIXEL;
+                    // end
+                end
+                init_frame_done <= 1'b1;
+
+            end
+
+            STATE_WAITING_PIXEL: begin
                 DC   <= HIGH;
                 CS   <= LOW;
                 MOSI <= color[data_count];
@@ -812,11 +844,6 @@ module ST7735 #(
                     //     oled_state <= STATE_WAITING_PIXEL;
                     // end
                 end
-
-            end
-
-            STATE_WAITING_PIXEL: begin
-
             end
 
         endcase
