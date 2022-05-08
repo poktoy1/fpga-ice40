@@ -15,7 +15,6 @@ module ST7735 #(
 );
 
 
-    localparam MAX = 7;
     localparam STATE_IDLE = 8'b0000000;
     localparam STATE_INIT = 8'b00000001;
     localparam STATE_TRICKLE_RESET = 8'b00000010;
@@ -27,6 +26,7 @@ module ST7735 #(
     localparam STATE_BITBANG_BUS = 8'b00001000;
     localparam STATE_WRITE_CONFIGURATIONS_DONE = 8'b00001001;
     localparam STATE_INIT_FRAME = 8'b00001010;
+    localparam STATE_WAITING_PIXEL = 8'b00001011;
 
     localparam CONFIG_B1 = 8'b00000000;
     localparam CONFIG_B2 = 8'b00000001;
@@ -50,22 +50,12 @@ module ST7735 #(
     localparam CONFIG_2C = 8'b00010011;
     localparam CONFIG_DONE = 8'b00010100;
 
-    localparam CURSOR_REG_2A = 4'b000;
-    localparam CURSOR_X_START = 4'b001;
-    localparam CURSOR_X_END = 4'b010;
-    localparam CURSOR_REG_2B = 4'b011;
-    localparam CURSOR_Y_START = 4'b100;
-    localparam CURSOR_Y_END = 4'b101;
-    localparam CURSOR_COLOR_MSB = 4'b110;
-    localparam CURSOR_COLOR_LSB = 4'b111;
-
-
     localparam HIGH = 1'b1;
     localparam LOW = 1'b0;
 
     wire lcd_delay_out;
     reg [7:0] data = 8'h00;
-    reg [3:0] data_count = 0;
+    reg [4:0] data_count = 7;
 
     reg [$clog2(17):0] next_data_count;
     reg [$clog2(17):0] next_data_count_max = 0;
@@ -95,7 +85,7 @@ module ST7735 #(
     reg [7:0] config_set_address[0:6];
     reg [7:0] config_cnt = CONFIG_B1;
 
-    reg [15:0] color = 16'hffff;
+    reg [15:0] color = 16'h0f0f;
     reg [$clog2(WIDTH):0] color_x = 0;
     reg [$clog2(HEIGHT):0] color_y = 0;
 
@@ -128,15 +118,15 @@ module ST7735 #(
     end
 
 
-    task write_bus(inout [7:0] spi_data, inout [3:0] count, output mosi);
+    // task write_bus(inout [7:0] spi_data, inout [3:0] count, output mosi);
 
-        begin
-            spi_data = {spi_data[6:0], spi_data[7]};
-            mosi = spi_data[7];
-            count = count + 1;
-        end
+    //     begin
+    //         spi_data = {spi_data[6:0], spi_data[7]};
+    //         mosi = spi_data[7];
+    //         count = count + 1;
+    //     end
 
-    endtask
+    // endtask
 
 
     DelayCounter #(
@@ -149,14 +139,6 @@ module ST7735 #(
         .start(delay_status)
     );
 
-    // always @(*) begin
-    //     MOSI <= data[7];
-    //     if (CS == LOW) begin
-    //         LCD_CLK <= SYSTEM_CLK;
-    //     end else begin
-    //         LCD_CLK <= HIGH;
-    //     end
-    // end
 
     always @(posedge SYSTEM_CLK) begin
 
@@ -168,6 +150,8 @@ module ST7735 #(
 
     always @(posedge LCD_CLK) begin
 
+        CS <= HIGH;
+        data_count <= data_count - 1;
 
         case (oled_state)
             STATE_IDLE: begin
@@ -190,31 +174,24 @@ module ST7735 #(
                     data <= 8'h11;
                     next_data_count <= 0;
                     next_data_count_max <= 1;
+                    data_count <= 7;
                     oled_state <= STATE_PREPARE_WRITE_REG;
                 end else begin
-                    RESET <= LOW;
+                    // RESET <= LOW;
                     CS <= LOW;
+                    data_count <= 7;
                 end
             end
 
             STATE_PREPARE_WRITE_REG: begin
 
-                DC <= LOW;
-                CS <= LOW;
-                oled_state <= STATE_WRITE_BUS;
-            end
-
-            STATE_PREPARE_WRITE_DATA: begin
-                DC <= HIGH;
-                CS <= LOW;
-                oled_state <= STATE_WRITE_BUS;
-            end
-
-            STATE_WRITE_BUS: begin
-                if (data_count >= MAX) begin
-                    
-
-                    data_count <= 0;
+                DC   <= LOW;
+                CS   <= LOW;
+                // data_count <= 7;
+                // oled_state <= STATE_WRITE_BUS;
+                MOSI <= data[data_count];
+                if (data_count == 0) begin
+                    data_count <= 7;
                     data <= 0;
 
                     if (init_done) begin
@@ -226,12 +203,30 @@ module ST7735 #(
                     end
 
 
-                end else begin
-                    write_bus(data, data_count, MOSI);
                 end
-
-
             end
+
+            STATE_PREPARE_WRITE_DATA: begin
+                DC   <= HIGH;
+                CS   <= LOW;
+                // data_count <= 7;
+                MOSI <= data[data_count];
+                if (data_count == 0) begin
+                    data_count <= 7;
+                    data <= 0;
+
+                    if (init_done) begin
+                        oled_state <= STATE_INIT_FRAME;
+                    end else if (init_write_config) begin
+                        oled_state <= STATE_WRITE_CONFIGURATIONS;
+                    end else begin
+                        oled_state <= STATE_DELAY_120MS;
+                    end
+
+
+                end
+            end
+
             STATE_DELAY_120MS: begin
 
                 delay_status <= HIGH;
@@ -349,9 +344,9 @@ module ST7735 #(
                     next_data_count <= 0;
                     next_data_count_max <= 0;
                     data <= 0;
-                    data_count <= 0;
+                    data_count <= 7;
 
-                    
+
                     if (init_done) begin
                         oled_state <= STATE_INIT_FRAME;
                     end else if (config_cnt >= CONFIG_DONE) begin
@@ -364,11 +359,13 @@ module ST7735 #(
                 end else if (next_data_count == 0) begin
                     // $display("data:%02h,next_data_count:%02h,max:%02h", data, next_data_count,
                     //  next_data_count_max);
+                    data_count <= 7;
                     next_data_count <= next_data_count + 1;
                     oled_state <= STATE_PREPARE_WRITE_REG;
                 end else begin
                     // $display("data:%02h,next_data_count:%02h,max:%02h", data, next_data_count,
                     //  next_data_count_max);
+                    data_count <= 7;
                     next_data_count <= next_data_count + 1;
                     oled_state <= STATE_PREPARE_WRITE_DATA;
                 end
@@ -380,16 +377,34 @@ module ST7735 #(
                 DC <= HIGH;
                 CS <= HIGH;
                 data <= 0;
-                data_count <= 0;
+                data_count <= 15;
                 next_data_count <= 0;
                 next_data_count_max <= 0;
-                
+
                 oled_state <= STATE_INIT_FRAME;
             end
 
             STATE_INIT_FRAME: begin
-                
+                DC   <= HIGH;
+                CS   <= LOW;
+                MOSI <= color[data_count];
+                if (data_count == 0) begin
+                    data_count <= 15;
+                    color_x <= color_x + 1;
+                    if (color_x >= WIDTH) begin
+                        color_x <= 0;
+                        color_y <= color_y + 1;
+                    end
+                    if (color_y >= HEIGHT) begin
+                        color_x <= 0;
+                        color_y <= 0;
+                        oled_state <= STATE_WAITING_PIXEL;
+                    end
+                end
 
+            end
+
+            STATE_WAITING_PIXEL: begin
 
             end
 
