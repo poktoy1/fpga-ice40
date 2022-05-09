@@ -83,6 +83,9 @@ module ST7735 #(
     reg [7:0] config_36[0:1];
     reg [7:0] config_2a[0:4];
     reg [7:0] config_2b[0:4];
+    reg [7:0] config_21 = 8'h21;
+    reg [7:0] config_29 = 8'h29;
+    reg [7:0] config_2c = 8'h2c;
     reg [7:0] config_set_address[0:6];
     reg [7:0] config_cnt = CONFIG_B1;
 
@@ -187,8 +190,6 @@ module ST7735 #(
             end
 
             STATE_PREPARE_WRITE_REG: begin
-
-                DC   <= LOW;
                 CS   <= LOW;
                 MOSI <= data[data_count];
                 if (data_count == 0) begin
@@ -244,483 +245,369 @@ module ST7735 #(
 
             STATE_WRITE_CONFIGURATIONS: begin
                 init_write_config <= HIGH;
-                
+
                 case (config_cnt)
                     CONFIG_B1: begin
                         // next_data_count_max <= 4;
                         // data <= config_b1[next_data_count];
-                        if (data_count == 0) begin
-                            next_data_count <= next_data_count + 1;
-                        end
-
-                        case (next_data_count)
-                            0: begin
-                                MOSI <= config_b1[next_data_count][data_count];
-                                CS <= LOW;
-
-
-                            end
-                        endcase
-
-
-
-                    end
-                    CONFIG_B2: begin
-                        if (next_data_count < 4) begin
-                            data <= config_b2[next_data_count];
-                            MOSI <= data[data_count];
-                        end
-
-                        if (next_data_count == 0) begin
-                            DC <= LOW;
-                        end else begin
+                        data <= config_b1[next_data_count];
+                        MOSI <= config_b1[next_data_count][data_count];
+                        CS   <= LOW;
+                        if (next_data_count > 0) begin
                             DC <= HIGH;
                         end
-
-
                         if (data_count == 0) begin
                             data_count <= MAX_BYTE;
                             next_data_count <= next_data_count + 1;
+                            if (next_data_count == 3) begin
+                                next_data_count <= 0;
+                                config_cnt <= CONFIG_B2;
+                            end
                         end
-                        if (next_data_count >= 4) begin
-                            next_data_count <= 0;
-                            config_cnt <= CONFIG_B3;
+
+                    end
+                    CONFIG_B2: begin
+                        data <= config_b2[next_data_count];
+                        MOSI <= config_b2[next_data_count][data_count];
+                        CS   <= LOW;
+                        if (next_data_count > 0) begin
+                            DC <= HIGH;
+                        end
+                        if (data_count == 0) begin
+                            data_count <= MAX_BYTE;
+                            next_data_count <= next_data_count + 1;
+                            if (next_data_count == 3) begin
+                                next_data_count <= 0;
+                                config_cnt <= CONFIG_B3;
+                            end
                         end
 
                     end
                     CONFIG_B3: begin
                         // next_data_count_max <= 7;
                         // data <= config_b3[next_data_count];
-                        if (next_data_count < 7) begin
-                            data <= config_b3[next_data_count];
-                            MOSI <= data[data_count];
-                        end
-
-                        if (next_data_count == 0) begin
-                            DC <= LOW;
-                        end else begin
+                        data <= config_b3[next_data_count];
+                        MOSI <= config_b3[next_data_count][data_count];
+                        CS   <= LOW;
+                        if (next_data_count > 0) begin
                             DC <= HIGH;
                         end
-
-
                         if (data_count == 0) begin
                             data_count <= MAX_BYTE;
                             next_data_count <= next_data_count + 1;
-                        end
-                        if (next_data_count >= 7) begin
-                            next_data_count <= 0;
-                            config_cnt <= CONFIG_B4;
+                            if (next_data_count == 6) begin
+                                next_data_count <= 0;
+                                config_cnt <= CONFIG_B4;
+                            end
                         end
 
                     end
                     CONFIG_B4: begin
                         // next_data_count_max <= 2;
                         // data <= config_b4[next_data_count];
-                        if (next_data_count < 2) begin
-                            data <= config_b4[next_data_count];
-                            MOSI <= data[data_count];
-                        end
-
-                        if (next_data_count == 0) begin
-                            DC <= LOW;
-                        end else begin
+                        data <= config_b4[next_data_count];
+                        MOSI <= config_b4[next_data_count][data_count];
+                        CS   <= LOW;
+                        if (next_data_count > 0) begin
                             DC <= HIGH;
                         end
-
-
                         if (data_count == 0) begin
                             data_count <= MAX_BYTE;
                             next_data_count <= next_data_count + 1;
-                        end
-                        if (next_data_count >= 2) begin
-                            next_data_count <= 0;
-                            config_cnt <= CONFIG_C0;
+                            if (next_data_count == 1) begin
+                                next_data_count <= 0;
+                                config_cnt <= CONFIG_C0;
+                            end
                         end
                     end
                     CONFIG_C0: begin
                         // next_data_count_max <= 4;
                         // data <= config_c0[next_data_count];
-                        if (next_data_count < 4) begin
-                            data <= config_c0[next_data_count];
-                            MOSI <= data[data_count];
-                        end
-
-                        if (next_data_count == 0) begin
-                            DC <= LOW;
-                        end else begin
+                        data <= config_c0[next_data_count];
+                        MOSI <= config_c0[next_data_count][data_count];
+                        CS   <= LOW;
+                        if (next_data_count > 0) begin
                             DC <= HIGH;
                         end
-
-
                         if (data_count == 0) begin
                             data_count <= MAX_BYTE;
                             next_data_count <= next_data_count + 1;
-                        end
-                        if (next_data_count >= 4) begin
-                            next_data_count <= 0;
-                            config_cnt <= CONFIG_C1;
+                            if (next_data_count == 3) begin
+                                next_data_count <= 0;
+                                config_cnt <= CONFIG_C1;
+                            end
                         end
                     end
                     CONFIG_C1: begin
                         // next_data_count_max <= 2;
                         // data <= config_c1[next_data_count];
-                        if (next_data_count < 2) begin
-                            data <= config_c1[next_data_count];
-                            MOSI <= data[data_count];
-                        end
-
-                        if (next_data_count == 0) begin
-                            DC <= LOW;
-                        end else begin
+                        data <= config_c1[next_data_count];
+                        MOSI <= config_c1[next_data_count][data_count];
+                        CS   <= LOW;
+                        if (next_data_count > 0) begin
                             DC <= HIGH;
                         end
-
-
                         if (data_count == 0) begin
                             data_count <= MAX_BYTE;
                             next_data_count <= next_data_count + 1;
-                        end
-                        if (next_data_count >= 2) begin
-                            next_data_count <= 0;
-                            config_cnt <= CONFIG_C2;
+                            if (next_data_count == 1) begin
+                                next_data_count <= 0;
+                                config_cnt <= CONFIG_C2;
+                            end
                         end
                     end
                     CONFIG_C2: begin
                         // next_data_count_max <= 3;
                         // data <= config_c2[next_data_count];
-                        if (next_data_count < 3) begin
-                            data <= config_c2[next_data_count];
-                            MOSI <= data[data_count];
-                        end
-
-                        if (next_data_count == 0) begin
-                            DC <= LOW;
-                        end else begin
+                        data <= config_c2[next_data_count];
+                        MOSI <= config_c2[next_data_count][data_count];
+                        CS   <= LOW;
+                        if (next_data_count > 0) begin
                             DC <= HIGH;
                         end
-
-
                         if (data_count == 0) begin
                             data_count <= MAX_BYTE;
                             next_data_count <= next_data_count + 1;
-                        end
-                        if (next_data_count >= 3) begin
-                            next_data_count <= 0;
-                            config_cnt <= CONFIG_C3;
+                            if (next_data_count == 2) begin
+                                next_data_count <= 0;
+                                config_cnt <= CONFIG_C3;
+                            end
                         end
                     end
                     CONFIG_C3: begin
                         // next_data_count_max <= 3;
                         // data <= config_c3[next_data_count];
-                        if (next_data_count < 3) begin
-                            data <= config_c3[next_data_count];
-                            MOSI <= data[data_count];
-                        end
-
-                        if (next_data_count == 0) begin
-                            DC <= LOW;
-                        end else begin
+                        data <= config_c3[next_data_count];
+                        MOSI <= config_c3[next_data_count][data_count];
+                        CS   <= LOW;
+                        if (next_data_count > 0) begin
                             DC <= HIGH;
                         end
-
-
                         if (data_count == 0) begin
                             data_count <= MAX_BYTE;
                             next_data_count <= next_data_count + 1;
-                        end
-                        if (next_data_count >= 3) begin
-                            next_data_count <= 0;
-                            config_cnt <= CONFIG_C4;
+                            if (next_data_count == 2) begin
+                                next_data_count <= 0;
+                                config_cnt <= CONFIG_C4;
+                            end
                         end
                     end
                     CONFIG_C4: begin
                         // next_data_count_max <= 3;
                         // data <= config_c4[next_data_count];
-                        if (next_data_count < 3) begin
-                            data <= config_c4[next_data_count];
-                            MOSI <= data[data_count];
-                        end
-
-                        if (next_data_count == 0) begin
-                            DC <= LOW;
-                        end else begin
+                        data <= config_c4[next_data_count];
+                        MOSI <= config_c4[next_data_count][data_count];
+                        CS   <= LOW;
+                        if (next_data_count > 0) begin
                             DC <= HIGH;
                         end
-
-
                         if (data_count == 0) begin
                             data_count <= MAX_BYTE;
                             next_data_count <= next_data_count + 1;
-                        end
-                        if (next_data_count >= 3) begin
-                            next_data_count <= 0;
-                            config_cnt <= CONFIG_C5;
+                            if (next_data_count == 2) begin
+                                next_data_count <= 0;
+                                config_cnt <= CONFIG_C5;
+                            end
                         end
                     end
                     CONFIG_C5: begin
                         // next_data_count_max <= 2;
                         // data <= config_c5[next_data_count];
-                        if (next_data_count < 2) begin
-                            data <= config_c5[next_data_count];
-                            MOSI <= data[data_count];
-                        end
-
-                        if (next_data_count == 0) begin
-                            DC <= LOW;
-                        end else begin
+                        data <= config_c5[next_data_count];
+                        MOSI <= config_c5[next_data_count][data_count];
+                        CS   <= LOW;
+                        if (next_data_count > 0) begin
                             DC <= HIGH;
                         end
-
-
                         if (data_count == 0) begin
                             data_count <= MAX_BYTE;
                             next_data_count <= next_data_count + 1;
-                        end
-                        if (next_data_count >= 2) begin
-                            next_data_count <= 0;
-                            config_cnt <= CONFIG_E0;
+                            if (next_data_count == 1) begin
+                                next_data_count <= 0;
+                                config_cnt <= CONFIG_E0;
+                            end
                         end
                     end
                     CONFIG_E0: begin
                         // next_data_count_max <= 17;
                         // data <= config_e0[next_data_count];
-                        if (next_data_count < 17) begin
-                            data <= config_e0[next_data_count];
-                            MOSI <= data[data_count];
-                        end
-
-                        if (next_data_count == 0) begin
-                            DC <= LOW;
-                        end else begin
+                        data <= config_e0[next_data_count];
+                        MOSI <= config_e0[next_data_count][data_count];
+                        CS   <= LOW;
+                        if (next_data_count > 0) begin
                             DC <= HIGH;
                         end
-
-
                         if (data_count == 0) begin
                             data_count <= MAX_BYTE;
                             next_data_count <= next_data_count + 1;
-                        end
-                        if (next_data_count >= 17) begin
-                            next_data_count <= 0;
-                            config_cnt <= CONFIG_E1;
+                            if (next_data_count == 16) begin
+                                next_data_count <= 0;
+                                config_cnt <= CONFIG_E1;
+                            end
                         end
                     end
                     CONFIG_E1: begin
                         // next_data_count_max <= 17;
                         // data <= config_e1[next_data_count];
-                        if (next_data_count < 17) begin
-                            data <= config_e1[next_data_count];
-                            MOSI <= data[data_count];
-                        end
-
-                        if (next_data_count == 0) begin
-                            DC <= LOW;
-                        end else begin
+                        data <= config_e1[next_data_count];
+                        MOSI <= config_e1[next_data_count][data_count];
+                        CS   <= LOW;
+                        if (next_data_count > 0) begin
                             DC <= HIGH;
                         end
-
-
                         if (data_count == 0) begin
                             data_count <= MAX_BYTE;
                             next_data_count <= next_data_count + 1;
-                        end
-                        if (next_data_count >= 17) begin
-                            next_data_count <= 0;
-                            config_cnt <= CONFIG_FC;
+                            if (next_data_count == 16) begin
+                                next_data_count <= 0;
+                                config_cnt <= CONFIG_FC;
+                            end
                         end
                     end
                     CONFIG_FC: begin
                         // next_data_count_max <= 2;
                         // data <= config_fc[next_data_count];
-                        if (next_data_count < 2) begin
-                            data <= config_fc[next_data_count];
-                            MOSI <= data[data_count];
-                        end
-
-                        if (next_data_count == 0) begin
-                            DC <= LOW;
-                        end else begin
+                        data <= config_fc[next_data_count];
+                        MOSI <= config_fc[next_data_count][data_count];
+                        CS   <= LOW;
+                        if (next_data_count > 0) begin
                             DC <= HIGH;
                         end
-
-
                         if (data_count == 0) begin
                             data_count <= MAX_BYTE;
                             next_data_count <= next_data_count + 1;
-                        end
-                        if (next_data_count >= 2) begin
-                            next_data_count <= 0;
-                            config_cnt <= CONFIG_3A;
+                            if (next_data_count == 1) begin
+                                next_data_count <= 0;
+                                config_cnt <= CONFIG_3A;
+                            end
                         end
                     end
                     CONFIG_3A: begin
                         // next_data_count_max <= 2;
                         // data <= config_3a[next_data_count];
-                        if (next_data_count < 2) begin
-                            data <= config_3a[next_data_count];
-                            MOSI <= data[data_count];
-                        end
-
-                        if (next_data_count == 0) begin
-                            DC <= LOW;
-                        end else begin
+                        data <= config_3a[next_data_count];
+                        MOSI <= config_3a[next_data_count][data_count];
+                        CS   <= LOW;
+                        if (next_data_count > 0) begin
                             DC <= HIGH;
                         end
-
-
                         if (data_count == 0) begin
                             data_count <= MAX_BYTE;
                             next_data_count <= next_data_count + 1;
-                        end
-                        if (next_data_count >= 2) begin
-                            next_data_count <= 0;
-                            config_cnt <= CONFIG_36;
+                            if (next_data_count == 1) begin
+                                next_data_count <= 0;
+                                config_cnt <= CONFIG_36;
+                            end
                         end
                     end
                     CONFIG_36: begin
                         // next_data_count_max <= 2;
                         // data <= config_36[next_data_count];
-                        if (next_data_count < 2) begin
-                            data <= config_36[next_data_count];
-                            MOSI <= data[data_count];
-                        end
-
-                        if (next_data_count == 0) begin
-                            DC <= LOW;
-                        end else begin
+                        data <= config_36[next_data_count];
+                        MOSI <= config_36[next_data_count][data_count];
+                        CS   <= LOW;
+                        if (next_data_count > 0) begin
                             DC <= HIGH;
                         end
-
-
                         if (data_count == 0) begin
                             data_count <= MAX_BYTE;
                             next_data_count <= next_data_count + 1;
-                        end
-                        if (next_data_count >= 2) begin
-                            next_data_count <= 0;
-                            config_cnt <= CONFIG_21;
+                            if (next_data_count == 1) begin
+                                next_data_count <= 0;
+                                config_cnt <= CONFIG_21;
+                            end
                         end
                     end
                     CONFIG_21: begin
                         // next_data_count_max <= 1;
                         // data <= 8'h21;
-                        if (next_data_count < 1) begin
-                            data <= 8'h21;  //config_b2[next_data_count];
-                            MOSI <= data[data_count];
-                        end
-
-                        if (next_data_count == 0) begin
-                            DC <= LOW;
-                        end else begin
+                        data <= config_21;
+                        MOSI <= config_21[data_count];
+                        CS   <= LOW;
+                        if (next_data_count > 0) begin
                             DC <= HIGH;
                         end
-
-
                         if (data_count == 0) begin
                             data_count <= MAX_BYTE;
                             next_data_count <= next_data_count + 1;
-                        end
-                        if (next_data_count >= 1) begin
-                            next_data_count <= 0;
-                            config_cnt <= CONFIG_29;
+                            if (next_data_count == 0) begin
+                                next_data_count <= 0;
+                                config_cnt <= CONFIG_29;
+                            end
                         end
 
                     end
                     CONFIG_29: begin
                         // next_data_count_max <= 1;
                         // data <= 8'h29;
-                        if (next_data_count < 1) begin
-                            data <= 8'h29;  //config_b2[next_data_count];
-                            MOSI <= data[data_count];
-                        end
-
-                        if (next_data_count == 0) begin
-                            DC <= LOW;
-                        end else begin
+                        data <= config_29;
+                        MOSI <= config_29[data_count];
+                        CS   <= LOW;
+                        if (next_data_count > 0) begin
                             DC <= HIGH;
                         end
-
-
                         if (data_count == 0) begin
                             data_count <= MAX_BYTE;
                             next_data_count <= next_data_count + 1;
-                        end
-                        if (next_data_count >= 1) begin
-                            next_data_count <= 0;
-                            config_cnt <= CONFIG_2A;
+                            if (next_data_count == 0) begin
+                                next_data_count <= 0;
+                                config_cnt <= CONFIG_2A;
+                            end
                         end
                     end
                     CONFIG_2A: begin
                         // next_data_count_max <= 5;
                         // data <= config_2a[next_data_count];
-                        if (next_data_count < 5) begin
-                            data <= config_2a[next_data_count];
-                            MOSI <= data[data_count];
-                        end
-
-                        if (next_data_count == 0) begin
-                            DC <= LOW;
-                        end else begin
+                        data <= config_2a[next_data_count];
+                        MOSI <= config_2a[next_data_count][data_count];
+                        CS   <= LOW;
+                        if (next_data_count > 0) begin
                             DC <= HIGH;
                         end
-
-
                         if (data_count == 0) begin
                             data_count <= MAX_BYTE;
                             next_data_count <= next_data_count + 1;
-                        end
-                        if (next_data_count >= 5) begin
-                            next_data_count <= 0;
-                            config_cnt <= CONFIG_2B;
+                            if (next_data_count == 4) begin
+                                next_data_count <= 0;
+                                config_cnt <= CONFIG_2B;
+                            end
                         end
                     end
                     CONFIG_2B: begin
                         // next_data_count_max <= 5;
                         // data <= config_2b[next_data_count];
-                        if (next_data_count < 5) begin
-                            data <= config_2b[next_data_count];
-                            MOSI <= data[data_count];
-                        end
-
-                        if (next_data_count == 0) begin
-                            DC <= LOW;
-                        end else begin
+                        data <= config_2b[next_data_count];
+                        MOSI <= config_2b[next_data_count][data_count];
+                        CS   <= LOW;
+                        if (next_data_count > 0) begin
                             DC <= HIGH;
                         end
-
-
                         if (data_count == 0) begin
                             data_count <= MAX_BYTE;
                             next_data_count <= next_data_count + 1;
-                        end
-                        if (next_data_count >= 5) begin
-                            next_data_count <= 0;
-                            config_cnt <= CONFIG_2C;
+                            if (next_data_count == 4) begin
+                                next_data_count <= 0;
+                                config_cnt <= CONFIG_2C;
+                            end
                         end
                     end
                     CONFIG_2C: begin
                         // next_data_count_max <= 1;
                         // data <= 8'h2C;
-                        if (next_data_count < 1) begin
-                            data <= 8'h2C;  //config_b2[next_data_count];
-                            MOSI <= data[data_count];
-                        end
-
-                        if (next_data_count == 0) begin
-                            DC <= LOW;
-                        end else begin
+                        data <= config_2c;
+                        MOSI <= config_2c[data_count];
+                        CS   <= LOW;
+                        if (next_data_count > 0) begin
                             DC <= HIGH;
                         end
-
-
                         if (data_count == 0) begin
                             data_count <= MAX_BYTE;
                             next_data_count <= next_data_count + 1;
-                        end
-                        if (next_data_count >= 1) begin
-                            next_data_count <= 0;
-                            // config_cnt <= CONFIG_2A;
-                            oled_state <= STATE_WRITE_CONFIGURATIONS_DONE;
+                            if (next_data_count == 0) begin
+                                next_data_count <= 0;
+                                // config_cnt <= CONFIG_2A;
+                                oled_state <= STATE_WRITE_CONFIGURATIONS_DONE;
+                            end
                         end
                     end
 
