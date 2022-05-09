@@ -134,13 +134,13 @@ module ST7735 #(
 
     always @(posedge SYSTEM_CLK) begin
 
-        LCD_CLK = ~LCD_CLK;
+        LCD_CLK <= ~LCD_CLK;
 
 
     end
 
 
-    always @(posedge LCD_CLK) begin
+    always @(negedge LCD_CLK) begin
 
         CS <= HIGH;
         DC <= LOW;
@@ -244,31 +244,23 @@ module ST7735 #(
 
             STATE_WRITE_CONFIGURATIONS: begin
                 init_write_config <= HIGH;
-                CS <= LOW;
+                
                 case (config_cnt)
                     CONFIG_B1: begin
                         // next_data_count_max <= 4;
                         // data <= config_b1[next_data_count];
-                        if (next_data_count < 4) begin
-                            data <= config_b1[next_data_count];
-                            MOSI <= data[data_count];
-                        end
-
-                        if (next_data_count == 0) begin
-                            DC <= LOW;
-                        end else begin
-                            DC <= HIGH;
-                        end
-
-
                         if (data_count == 0) begin
-                            data_count <= MAX_BYTE;
                             next_data_count <= next_data_count + 1;
                         end
-                        if (next_data_count >= 4) begin
-                            next_data_count <= 0;
-                            config_cnt <= CONFIG_B2;
-                        end
+
+                        case (next_data_count)
+                            0: begin
+                                MOSI <= config_b1[next_data_count][data_count];
+                                CS <= LOW;
+
+
+                            end
+                        endcase
 
 
 
@@ -787,12 +779,12 @@ module ST7735 #(
                 data_count <= 15;
                 next_data_count <= 0;
                 next_data_count_max <= 0;
-                if(init_frame_done) begin
+                if (init_frame_done) begin
                     oled_state <= STATE_WAITING_PIXEL;
                 end else begin
                     oled_state <= STATE_INIT_FRAME;
                 end
-                
+
             end
 
             STATE_INIT_FRAME: begin
