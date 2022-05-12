@@ -147,6 +147,7 @@ module ST7735 #(
 
         CS <= HIGH;
         DC <= LOW;
+        RESET <= HIGH;
         data_count <= data_count - 1;
 
         case (oled_state)
@@ -159,7 +160,7 @@ module ST7735 #(
             end
             STATE_INIT: begin
                 if (lcd_delay_out) begin
-                    RESET <= HIGH;
+                    
                     delay_status <= HIGH;
                     data <= 0;
                     next_data_count <= 0;
@@ -168,7 +169,7 @@ module ST7735 #(
                     oled_state <= STATE_TRICKLE_RESET;
                 end else begin
                     RESET <= LOW;
-                    data_count <= MAX_BYTE;
+                    
                 end
 
             end
