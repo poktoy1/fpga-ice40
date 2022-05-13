@@ -2,7 +2,7 @@
 
 module ST7735 #(
     parameter CLOCK_SPEED_MHZ = 12,
-    parameter DELAY_US = 100000,
+    parameter DELAY_US = 120000,
     parameter WIDTH = 160,
     parameter HEIGHT = 120
 ) (
@@ -19,13 +19,12 @@ module ST7735 #(
     localparam STATE_INIT = 1;
     localparam STATE_TRICKLE_RESET = 2;
     localparam STATE_PREPARE_WRITE_REG = 3;
-    localparam STATE_PREPARE_WRITE_DATA = 4;
-    localparam STATE_DELAY_120MS = 5;
-    localparam STATE_WRITE_CONFIGURATIONS = 6;
-    localparam STATE_WRITE_CONFIGURATIONS_DONE = 7;
-    localparam STATE_INIT_FRAME = 8;
-    localparam STATE_PRINT_COLOR = 9;
-    localparam STATE_WAIT_FOR_DATA = 10;
+    localparam STATE_DELAY_120MS = 4;
+    localparam STATE_WRITE_CONFIGURATIONS = 5;
+    localparam STATE_WRITE_CONFIGURATIONS_DONE = 6;
+    localparam STATE_INIT_FRAME = 7;
+    localparam STATE_PRINT_COLOR = 8;
+    localparam STATE_WAIT_FOR_DATA = 9;
 
     localparam CONFIG_B1 = 8'b00000000;
     localparam CONFIG_B2 = 8'b00000001;
@@ -126,9 +125,9 @@ module ST7735 #(
     DelayCounter #(
         .CLOCK_SPEED_MHZ(CLOCK_SPEED_MHZ),
         // .US_DELAY(120000)
-        .US_DELAY(DELAY_US)
+        .US_DELAY(DELAY_US/2)
     ) _lcd_delay (
-        .CLK  (SYSTEM_CLK),
+        .CLK  (LCD_CLK),
         .out  (lcd_delay_out),
         .start(delay_status)
     );
@@ -142,7 +141,7 @@ module ST7735 #(
     end
 
 
-    always @(negedge LCD_CLK) begin
+    always @(posedge LCD_CLK) begin
 
         CS <= HIGH;
         DC <= LOW;
@@ -166,24 +165,22 @@ module ST7735 #(
                     next_data_count_max <= 1;
                     data_count <= MAX_BYTE;
                     oled_state <= STATE_TRICKLE_RESET;
-                end 
+                end else begin
+                    RESET <= LOW;
+                end
 
             end
 
             STATE_TRICKLE_RESET: begin
 
                 if (lcd_delay_out) begin
-
                     delay_status <= LOW;
                     data <= 8'h11;
                     next_data_count <= 0;
                     next_data_count_max <= 1;
                     data_count <= MAX_BYTE;
                     oled_state <= STATE_PREPARE_WRITE_REG;
-                end else begin
-
-                    data_count <= MAX_BYTE;
-                end
+                end 
             end
 
             STATE_PREPARE_WRITE_REG: begin
@@ -205,26 +202,26 @@ module ST7735 #(
                 end
             end
 
-            STATE_PREPARE_WRITE_DATA: begin
-                DC   <= HIGH;
-                CS   <= LOW;
-                // data_count <= MAX_BYTE;
-                MOSI <= data[data_count];
-                if (data_count == 0) begin
-                    data_count <= MAX_BYTE;
-                    data <= 0;
+            // STATE_PREPARE_WRITE_DATA: begin
+            //     DC   <= HIGH;
+            //     CS   <= LOW;
+            //     // data_count <= MAX_BYTE;
+            //     MOSI <= data[data_count];
+            //     if (data_count == 0) begin
+            //         data_count <= MAX_BYTE;
+            //         data <= 0;
 
-                    if (init_done) begin
-                        oled_state <= STATE_INIT_FRAME;
-                    end else if (init_write_config) begin
-                        oled_state <= STATE_WRITE_CONFIGURATIONS;
-                    end else begin
-                        oled_state <= STATE_DELAY_120MS;
-                    end
+            //         if (init_done) begin
+            //             oled_state <= STATE_INIT_FRAME;
+            //         end else if (init_write_config) begin
+            //             oled_state <= STATE_WRITE_CONFIGURATIONS;
+            //         end else begin
+            //             oled_state <= STATE_DELAY_120MS;
+            //         end
 
 
-                end
-            end
+            //     end
+            // end
 
             STATE_DELAY_120MS: begin
 
