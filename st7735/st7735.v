@@ -15,19 +15,17 @@ module ST7735 #(
 );
 
 
-    localparam STATE_IDLE = 8'b00000000;
-    localparam STATE_INIT = 8'b00000001;
-    localparam STATE_TRICKLE_RESET = 8'b00000010;
-    localparam STATE_PREPARE_WRITE_REG = 8'b00000011;
-    localparam STATE_PREPARE_WRITE_DATA = 8'b00000100;
-    localparam STATE_WRITE_BUS = 8'b00000101;
-    localparam STATE_DELAY_120MS = 8'b00000110;
-    localparam STATE_WRITE_CONFIGURATIONS = 8'b00000111;
-    localparam STATE_BITBANG_BUS = 8'b00001000;
-    localparam STATE_WRITE_CONFIGURATIONS_DONE = 8'b00001001;
-    localparam STATE_INIT_FRAME = 8'b00001010;
-    localparam STATE_PRINT_COLOR = 8'b00001011;
-    localparam STATE_WAIT_FOR_DATA = 8'b00001100;
+    localparam STATE_IDLE = 0;
+    localparam STATE_INIT = 1;
+    localparam STATE_TRICKLE_RESET = 2;
+    localparam STATE_PREPARE_WRITE_REG = 3;
+    localparam STATE_PREPARE_WRITE_DATA = 4;
+    localparam STATE_DELAY_120MS = 5;
+    localparam STATE_WRITE_CONFIGURATIONS = 6;
+    localparam STATE_WRITE_CONFIGURATIONS_DONE = 7;
+    localparam STATE_INIT_FRAME = 8;
+    localparam STATE_PRINT_COLOR = 9;
+    localparam STATE_WAIT_FOR_DATA = 10;
 
     localparam CONFIG_B1 = 8'b00000000;
     localparam CONFIG_B2 = 8'b00000001;
@@ -168,10 +166,7 @@ module ST7735 #(
                     next_data_count_max <= 1;
                     data_count <= MAX_BYTE;
                     oled_state <= STATE_TRICKLE_RESET;
-                end else begin
-                    RESET <= LOW;
-
-                end
+                end 
 
             end
 
@@ -616,47 +611,6 @@ module ST7735 #(
 
                 endcase
 
-                // if (config_cnt >= CONFIG_DONE) begin
-                //     oled_state <= STATE_WRITE_CONFIGURATIONS_DONE;
-                // end else begin
-                //     oled_state <= STATE_BITBANG_BUS;
-                // end
-
-
-
-            end
-
-            STATE_BITBANG_BUS: begin
-
-                if (next_data_count >= next_data_count_max) begin
-                    next_data_count <= 0;
-                    next_data_count_max <= 0;
-                    data <= 0;
-                    data_count <= MAX_BYTE;
-
-
-                    if (init_done) begin
-                        oled_state <= STATE_INIT_FRAME;
-                    end else if (config_cnt >= CONFIG_DONE) begin
-                        oled_state <= STATE_WRITE_CONFIGURATIONS_DONE;
-                    end else begin
-                        config_cnt <= config_cnt + 1;
-                        oled_state <= STATE_WRITE_CONFIGURATIONS;
-                    end
-
-                end else if (next_data_count == 0) begin
-                    // $display("data:%02h,next_data_count:%02h,max:%02h", data, next_data_count,
-                    //  next_data_count_max);
-                    data_count <= MAX_BYTE;
-                    next_data_count <= next_data_count + 1;
-                    oled_state <= STATE_PREPARE_WRITE_REG;
-                end else begin
-                    // $display("data:%02h,next_data_count:%02h,max:%02h", data, next_data_count,
-                    //  next_data_count_max);
-                    data_count <= MAX_BYTE;
-                    next_data_count <= next_data_count + 1;
-                    oled_state <= STATE_PREPARE_WRITE_DATA;
-                end
             end
 
             STATE_WRITE_CONFIGURATIONS_DONE: begin
