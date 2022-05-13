@@ -18,7 +18,7 @@ module ST7735 #(
     localparam STATE_IDLE = 0;
     localparam STATE_INIT = 1;
     localparam STATE_TRICKLE_RESET = 2;
-    localparam STATE_PREPARE_WRITE_REG = 3;
+    localparam STATE_11_REG = 3;
     localparam STATE_DELAY_120MS = 4;
     localparam STATE_WRITE_CONFIGURATIONS = 5;
     localparam STATE_WRITE_CONFIGURATIONS_DONE = 6;
@@ -62,7 +62,6 @@ module ST7735 #(
     reg delay_status = LOW;
     reg [7:0] oled_state = STATE_IDLE;
     reg init_done = LOW;
-    reg init_write_config = LOW;
 
     reg [7:0] config_b1[0:3];
     reg [7:0] config_b2[0:3];
@@ -87,7 +86,7 @@ module ST7735 #(
     reg [7:0] config_set_address[0:6];
     reg [7:0] config_cnt = CONFIG_B1;
 
-    reg [15:0] color = 16'hbcc3;
+    reg [15:0] color = 16'h16F9;
     reg [$clog2(WIDTH):0] color_x = 0;
     reg [$clog2(HEIGHT):0] color_y = 0;
     reg [19:0] current_pixel;
@@ -137,11 +136,10 @@ module ST7735 #(
 
         LCD_CLK <= ~LCD_CLK;
 
-
     end
 
 
-    always @(posedge LCD_CLK) begin
+    always @(negedge LCD_CLK) begin
 
         CS <= HIGH;
         DC <= LOW;
@@ -179,49 +177,20 @@ module ST7735 #(
                     next_data_count <= 0;
                     next_data_count_max <= 1;
                     data_count <= MAX_BYTE;
-                    oled_state <= STATE_PREPARE_WRITE_REG;
+                    oled_state <= STATE_11_REG;
                 end 
             end
 
-            STATE_PREPARE_WRITE_REG: begin
+            STATE_11_REG: begin
                 CS   <= LOW;
                 MOSI <= data[data_count];
                 if (data_count == 0) begin
                     data_count <= MAX_BYTE;
                     data <= 0;
-
-                    if (init_done) begin
-                        oled_state <= STATE_INIT_FRAME;
-                    end else if (init_write_config) begin
-                        oled_state <= STATE_WRITE_CONFIGURATIONS;
-                    end else begin
-                        oled_state <= STATE_DELAY_120MS;
-                    end
-
+                    oled_state <= STATE_DELAY_120MS;
 
                 end
             end
-
-            // STATE_PREPARE_WRITE_DATA: begin
-            //     DC   <= HIGH;
-            //     CS   <= LOW;
-            //     // data_count <= MAX_BYTE;
-            //     MOSI <= data[data_count];
-            //     if (data_count == 0) begin
-            //         data_count <= MAX_BYTE;
-            //         data <= 0;
-
-            //         if (init_done) begin
-            //             oled_state <= STATE_INIT_FRAME;
-            //         end else if (init_write_config) begin
-            //             oled_state <= STATE_WRITE_CONFIGURATIONS;
-            //         end else begin
-            //             oled_state <= STATE_DELAY_120MS;
-            //         end
-
-
-            //     end
-            // end
 
             STATE_DELAY_120MS: begin
 
@@ -238,7 +207,6 @@ module ST7735 #(
             end
 
             STATE_WRITE_CONFIGURATIONS: begin
-                init_write_config <= HIGH;
 
                 case (config_cnt)
                     CONFIG_B1: begin
@@ -611,7 +579,6 @@ module ST7735 #(
             end
 
             STATE_WRITE_CONFIGURATIONS_DONE: begin
-                init_write_config <= LOW;
                 init_done <= HIGH;
                 DC <= HIGH;
                 CS <= HIGH;
@@ -633,24 +600,7 @@ module ST7735 #(
                 MOSI <= color[data_count];
                 if (data_count == 0) begin
                     data_count <= 15;
-                    // current_pixel <= current_pixel + 1;
-                    // if (current_pixel == WIDTH * HEIGHT) begin
-                    //     current_pixel <= 0;
-                    //     config_cnt <= CONFIG_2A;
-                    //     oled_state <= STATE_WRITE_CONFIGURATIONS;
-                    // end
-                    // color_x <= color_x + 1;
-                    // if (color_x >= WIDTH) begin
-                    //     color_x <= 0;
-                    //     color_y <= color_y + 1;
-                    // end
-                    // if (color_y >= HEIGHT) begin
-                    //     color_x <= 0;
-                    //     color_y <= 0;
-                    //     current_pixel <= 0;
-                    //     config_cnt <= CONFIG_2A;
-                    //     oled_state <= STATE_WRITE_CONFIGURATIONS;
-                    // end
+                    
                     if (color_y < HEIGHT - 1) begin
                         color_x <= color_x + 1;
                         if (color_x > WIDTH - 1) begin
@@ -675,12 +625,6 @@ module ST7735 #(
                 MOSI <= color[data_count];
                 if (data_count == 0) begin
                     data_count <= 15;
-                    // current_pixel <= current_pixel + 1;
-                    // if (current_pixel == WIDTH * HEIGHT) begin
-                    //     current_pixel <= 0;
-                    //     oled_state <= STATE_PRINT_COLOR;
-                    // end
-
                     if (color_y < HEIGHT - 1) begin
                         color_x <= color_x + 1;
                         if (color_x > WIDTH - 1) begin
