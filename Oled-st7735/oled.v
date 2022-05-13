@@ -13,9 +13,11 @@ module Oled (
     output RESET
 );
 
+    wire is_lcd_ready;
 
     ST7735 _st7735 (
         .SYSTEM_CLK(SYSTEM_CLK),
+        .LCD_READY(is_lcd_ready),
         .CS(CS),
         .MOSI(MOSI),
         .DC(DC),
@@ -30,6 +32,11 @@ module Oled (
         .out(LED_STAT),
         .CLK(SYSTEM_CLK)
     );
+
+    always @(posedge SYSTEM_CLK) begin
+        if (is_lcd_ready) begin
+        end
+    end
 
 
 endmodule

@@ -7,6 +7,7 @@ module ST7735 #(
     parameter HEIGHT = 120
 ) (
     input  wire SYSTEM_CLK,
+    output wire LCD_READY,
     output reg  CS,
     output reg  MOSI,
     output reg  DC,
@@ -50,13 +51,13 @@ module ST7735 #(
     localparam HIGH = 1'b1;
     localparam LOW = 1'b0;
     localparam MAX_BYTE = 7;
+    localparam [7:0] reg_11 = 8'h11;
 
     wire lcd_delay_out;
-    reg [7:0] data = 8'h00;
     reg [4:0] data_count;
 
     reg [$clog2(17):0] next_data_count;
-    reg [$clog2(17):0] next_data_count_max = 0;
+    // reg [$clog2(17):0] next_data_count_max = 0;
 
     reg delay_status = LOW;
     reg [7:0] oled_state = STATE_IDLE;
@@ -88,10 +89,9 @@ module ST7735 #(
     reg [15:0] color = 16'h16F9;
     reg [$clog2(WIDTH):0] color_x = 0;
     reg [$clog2(HEIGHT):0] color_y = 0;
-    reg [19:0] current_pixel;
     reg init_frame_done = 0;
 
-    integer i;
+    assign LCD_READY = init_frame_done;
 
     initial begin
         CS = HIGH;
@@ -157,9 +157,7 @@ module ST7735 #(
                 if (lcd_delay_out) begin
 
                     delay_status <= HIGH;
-                    data <= 0;
                     next_data_count <= 0;
-                    next_data_count_max <= 1;
                     data_count <= MAX_BYTE;
                     oled_state <= STATE_TRICKLE_RESET;
                 end else begin
@@ -172,9 +170,7 @@ module ST7735 #(
 
                 if (lcd_delay_out) begin
                     delay_status <= LOW;
-                    data <= 8'h11;
                     next_data_count <= 0;
-                    next_data_count_max <= 1;
                     data_count <= MAX_BYTE;
                     oled_state <= STATE_11_REG;
                 end 
@@ -182,10 +178,9 @@ module ST7735 #(
 
             STATE_11_REG: begin
                 CS   <= LOW;
-                MOSI <= data[data_count];
+                MOSI <= reg_11[data_count];
                 if (data_count == 0) begin
                     data_count <= MAX_BYTE;
-                    data <= 0;
                     oled_state <= STATE_DELAY_120MS;
 
                 end
@@ -211,7 +206,6 @@ module ST7735 #(
                     CONFIG_B1: begin
                         // next_data_count_max <= 4;
                         // data <= config_b1[next_data_count];
-                        data <= config_b1[next_data_count];
                         MOSI <= config_b1[next_data_count][data_count];
                         CS   <= LOW;
                         if (next_data_count > 0) begin
@@ -228,7 +222,6 @@ module ST7735 #(
 
                     end
                     CONFIG_B2: begin
-                        data <= config_b2[next_data_count];
                         MOSI <= config_b2[next_data_count][data_count];
                         CS   <= LOW;
                         if (next_data_count > 0) begin
@@ -247,7 +240,6 @@ module ST7735 #(
                     CONFIG_B3: begin
                         // next_data_count_max <= 7;
                         // data <= config_b3[next_data_count];
-                        data <= config_b3[next_data_count];
                         MOSI <= config_b3[next_data_count][data_count];
                         CS   <= LOW;
                         if (next_data_count > 0) begin
@@ -266,7 +258,6 @@ module ST7735 #(
                     CONFIG_B4: begin
                         // next_data_count_max <= 2;
                         // data <= config_b4[next_data_count];
-                        data <= config_b4[next_data_count];
                         MOSI <= config_b4[next_data_count][data_count];
                         CS   <= LOW;
                         if (next_data_count > 0) begin
@@ -284,7 +275,6 @@ module ST7735 #(
                     CONFIG_C0: begin
                         // next_data_count_max <= 4;
                         // data <= config_c0[next_data_count];
-                        data <= config_c0[next_data_count];
                         MOSI <= config_c0[next_data_count][data_count];
                         CS   <= LOW;
                         if (next_data_count > 0) begin
@@ -302,7 +292,6 @@ module ST7735 #(
                     CONFIG_C1: begin
                         // next_data_count_max <= 2;
                         // data <= config_c1[next_data_count];
-                        data <= config_c1[next_data_count];
                         MOSI <= config_c1[next_data_count][data_count];
                         CS   <= LOW;
                         if (next_data_count > 0) begin
@@ -320,7 +309,6 @@ module ST7735 #(
                     CONFIG_C2: begin
                         // next_data_count_max <= 3;
                         // data <= config_c2[next_data_count];
-                        data <= config_c2[next_data_count];
                         MOSI <= config_c2[next_data_count][data_count];
                         CS   <= LOW;
                         if (next_data_count > 0) begin
@@ -338,7 +326,6 @@ module ST7735 #(
                     CONFIG_C3: begin
                         // next_data_count_max <= 3;
                         // data <= config_c3[next_data_count];
-                        data <= config_c3[next_data_count];
                         MOSI <= config_c3[next_data_count][data_count];
                         CS   <= LOW;
                         if (next_data_count > 0) begin
@@ -356,7 +343,6 @@ module ST7735 #(
                     CONFIG_C4: begin
                         // next_data_count_max <= 3;
                         // data <= config_c4[next_data_count];
-                        data <= config_c4[next_data_count];
                         MOSI <= config_c4[next_data_count][data_count];
                         CS   <= LOW;
                         if (next_data_count > 0) begin
@@ -374,7 +360,6 @@ module ST7735 #(
                     CONFIG_C5: begin
                         // next_data_count_max <= 2;
                         // data <= config_c5[next_data_count];
-                        data <= config_c5[next_data_count];
                         MOSI <= config_c5[next_data_count][data_count];
                         CS   <= LOW;
                         if (next_data_count > 0) begin
@@ -392,7 +377,6 @@ module ST7735 #(
                     CONFIG_E0: begin
                         // next_data_count_max <= 17;
                         // data <= config_e0[next_data_count];
-                        data <= config_e0[next_data_count];
                         MOSI <= config_e0[next_data_count][data_count];
                         CS   <= LOW;
                         if (next_data_count > 0) begin
@@ -410,7 +394,6 @@ module ST7735 #(
                     CONFIG_E1: begin
                         // next_data_count_max <= 17;
                         // data <= config_e1[next_data_count];
-                        data <= config_e1[next_data_count];
                         MOSI <= config_e1[next_data_count][data_count];
                         CS   <= LOW;
                         if (next_data_count > 0) begin
@@ -428,7 +411,6 @@ module ST7735 #(
                     CONFIG_FC: begin
                         // next_data_count_max <= 2;
                         // data <= config_fc[next_data_count];
-                        data <= config_fc[next_data_count];
                         MOSI <= config_fc[next_data_count][data_count];
                         CS   <= LOW;
                         if (next_data_count > 0) begin
@@ -446,7 +428,6 @@ module ST7735 #(
                     CONFIG_3A: begin
                         // next_data_count_max <= 2;
                         // data <= config_3a[next_data_count];
-                        data <= config_3a[next_data_count];
                         MOSI <= config_3a[next_data_count][data_count];
                         CS   <= LOW;
                         if (next_data_count > 0) begin
@@ -464,7 +445,6 @@ module ST7735 #(
                     CONFIG_36: begin
                         // next_data_count_max <= 2;
                         // data <= config_36[next_data_count];
-                        data <= config_36[next_data_count];
                         MOSI <= config_36[next_data_count][data_count];
                         CS   <= LOW;
                         if (next_data_count > 0) begin
@@ -482,7 +462,6 @@ module ST7735 #(
                     CONFIG_21: begin
                         // next_data_count_max <= 1;
                         // data <= 8'h21;
-                        data <= config_21;
                         MOSI <= config_21[data_count];
                         CS   <= LOW;
                         if (next_data_count > 0) begin
@@ -501,7 +480,6 @@ module ST7735 #(
                     CONFIG_29: begin
                         // next_data_count_max <= 1;
                         // data <= 8'h29;
-                        data <= config_29;
                         MOSI <= config_29[data_count];
                         CS   <= LOW;
                         if (next_data_count > 0) begin
@@ -519,7 +497,6 @@ module ST7735 #(
                     CONFIG_2A: begin
                         // next_data_count_max <= 5;
                         // data <= config_2a[next_data_count];
-                        data <= config_2a[next_data_count];
                         MOSI <= config_2a[next_data_count][data_count];
                         CS   <= LOW;
                         if (next_data_count > 0) begin
@@ -537,7 +514,6 @@ module ST7735 #(
                     CONFIG_2B: begin
                         // next_data_count_max <= 5;
                         // data <= config_2b[next_data_count];
-                        data <= config_2b[next_data_count];
                         MOSI <= config_2b[next_data_count][data_count];
                         CS   <= LOW;
                         if (next_data_count > 0) begin
@@ -555,7 +531,6 @@ module ST7735 #(
                     CONFIG_2C: begin
                         // next_data_count_max <= 1;
                         // data <= 8'h2C;
-                        data <= config_2c;
                         MOSI <= config_2c[data_count];
                         CS   <= LOW;
                         if (next_data_count > 0) begin
@@ -581,10 +556,8 @@ module ST7735 #(
                 init_done <= HIGH;
                 DC <= HIGH;
                 CS <= HIGH;
-                data <= 0;
                 data_count <= 15;
                 next_data_count <= 0;
-                next_data_count_max <= 0;
                 if (init_frame_done) begin
                     oled_state <= STATE_WAIT_FOR_DATA;
                 end else begin
@@ -607,7 +580,6 @@ module ST7735 #(
                             color_y <= color_y + 1;
                         end
                     end else begin
-                        current_pixel <= 0;
                         color_x <= 0;
                         color_y <= 0;
                         config_cnt <= CONFIG_2A;
