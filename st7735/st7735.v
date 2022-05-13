@@ -7,6 +7,7 @@ module ST7735 #(
     parameter HEIGHT = 120
 ) (
     input  wire SYSTEM_CLK,
+    input [15:0] color,
     output wire LCD_READY,
     output reg  CS,
     output reg  MOSI,
@@ -57,7 +58,6 @@ module ST7735 #(
     reg [4:0] data_count;
 
     reg [$clog2(17):0] next_data_count;
-    // reg [$clog2(17):0] next_data_count_max = 0;
 
     reg delay_status = LOW;
     reg [7:0] oled_state = STATE_IDLE;
@@ -86,7 +86,6 @@ module ST7735 #(
     reg [7:0] config_set_address[0:6];
     reg [7:0] config_cnt = CONFIG_B1;
 
-    reg [15:0] color = 16'h16F9;
     reg [$clog2(WIDTH):0] color_x = 0;
     reg [$clog2(HEIGHT):0] color_y = 0;
     reg init_frame_done = 0;

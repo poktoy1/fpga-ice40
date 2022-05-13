@@ -14,9 +14,11 @@ module Oled (
 );
 
     wire is_lcd_ready;
+    reg [15:0] color = 16'h16F9;
 
     ST7735 _st7735 (
         .SYSTEM_CLK(SYSTEM_CLK),
+        .color(color),
         .LCD_READY(is_lcd_ready),
         .CS(CS),
         .MOSI(MOSI),
