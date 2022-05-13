@@ -15,16 +15,19 @@ module ST7735 #(
 );
 
 
-    localparam STATE_IDLE = 0;
-    localparam STATE_INIT = 1;
-    localparam STATE_TRICKLE_RESET = 2;
-    localparam STATE_PREPARE_WRITE_REG = 3;
-    localparam STATE_DELAY_120MS = 4;
-    localparam STATE_WRITE_CONFIGURATIONS = 5;
-    localparam STATE_WRITE_CONFIGURATIONS_DONE = 6;
-    localparam STATE_INIT_FRAME = 7;
-    localparam STATE_PRINT_COLOR = 8;
-    localparam STATE_WAIT_FOR_DATA = 9;
+    localparam STATE_IDLE = 8'b00000000;
+    localparam STATE_INIT = 8'b00000001;
+    localparam STATE_TRICKLE_RESET = 8'b00000010;
+    localparam STATE_PREPARE_WRITE_REG = 8'b00000011;
+    localparam STATE_PREPARE_WRITE_DATA = 8'b00000100;
+    localparam STATE_WRITE_BUS = 8'b00000101;
+    localparam STATE_DELAY_120MS = 8'b00000110;
+    localparam STATE_WRITE_CONFIGURATIONS = 8'b00000111;
+    localparam STATE_BITBANG_BUS = 8'b00001000;
+    localparam STATE_WRITE_CONFIGURATIONS_DONE = 8'b00001001;
+    localparam STATE_INIT_FRAME = 8'b00001010;
+    localparam STATE_PRINT_COLOR = 8'b00001011;
+    localparam STATE_WAIT_FOR_DATA = 8'b00001100;
 
     localparam CONFIG_B1 = 8'b00000000;
     localparam CONFIG_B2 = 8'b00000001;
@@ -87,7 +90,7 @@ module ST7735 #(
     reg [7:0] config_set_address[0:6];
     reg [7:0] config_cnt = CONFIG_B1;
 
-    reg [15:0] color = 16'b0000011111100000;
+    reg [15:0] color = 16'hbcc3;
     reg [$clog2(WIDTH):0] color_x = 0;
     reg [$clog2(HEIGHT):0] color_y = 0;
     reg [19:0] current_pixel;
@@ -182,7 +185,10 @@ module ST7735 #(
                     next_data_count_max <= 1;
                     data_count <= MAX_BYTE;
                     oled_state <= STATE_PREPARE_WRITE_REG;
-                end 
+                end else begin
+
+                    data_count <= MAX_BYTE;
+                end
             end
 
             STATE_PREPARE_WRITE_REG: begin
@@ -192,14 +198,35 @@ module ST7735 #(
                     data_count <= MAX_BYTE;
                     data <= 0;
 
-                    // if (init_done) begin
-                    //     oled_state <= STATE_INIT_FRAME;
-                    // end else if (init_write_config) begin
-                    //     oled_state <= STATE_WRITE_CONFIGURATIONS;
-                    // end else begin
-                    //     oled_state <= STATE_DELAY_120MS;
-                    // end
-                    oled_state <= STATE_DELAY_120MS;
+                    if (init_done) begin
+                        oled_state <= STATE_INIT_FRAME;
+                    end else if (init_write_config) begin
+                        oled_state <= STATE_WRITE_CONFIGURATIONS;
+                    end else begin
+                        oled_state <= STATE_DELAY_120MS;
+                    end
+
+
+                end
+            end
+
+            STATE_PREPARE_WRITE_DATA: begin
+                DC   <= HIGH;
+                CS   <= LOW;
+                // data_count <= MAX_BYTE;
+                MOSI <= data[data_count];
+                if (data_count == 0) begin
+                    data_count <= MAX_BYTE;
+                    data <= 0;
+
+                    if (init_done) begin
+                        oled_state <= STATE_INIT_FRAME;
+                    end else if (init_write_config) begin
+                        oled_state <= STATE_WRITE_CONFIGURATIONS;
+                    end else begin
+                        oled_state <= STATE_DELAY_120MS;
+                    end
+
 
                 end
             end
@@ -567,6 +594,8 @@ module ST7735 #(
                         end
                     end
                     CONFIG_2C: begin
+                        // next_data_count_max <= 1;
+                        // data <= 8'h2C;
                         data <= config_2c;
                         MOSI <= config_2c[data_count];
                         CS   <= LOW;
@@ -578,6 +607,7 @@ module ST7735 #(
                             next_data_count <= next_data_count + 1;
                             if (next_data_count == 0) begin
                                 next_data_count <= 0;
+                                // config_cnt <= CONFIG_2A;
                                 oled_state <= STATE_WRITE_CONFIGURATIONS_DONE;
                             end
                         end
@@ -586,6 +616,47 @@ module ST7735 #(
 
                 endcase
 
+                // if (config_cnt >= CONFIG_DONE) begin
+                //     oled_state <= STATE_WRITE_CONFIGURATIONS_DONE;
+                // end else begin
+                //     oled_state <= STATE_BITBANG_BUS;
+                // end
+
+
+
+            end
+
+            STATE_BITBANG_BUS: begin
+
+                if (next_data_count >= next_data_count_max) begin
+                    next_data_count <= 0;
+                    next_data_count_max <= 0;
+                    data <= 0;
+                    data_count <= MAX_BYTE;
+
+
+                    if (init_done) begin
+                        oled_state <= STATE_INIT_FRAME;
+                    end else if (config_cnt >= CONFIG_DONE) begin
+                        oled_state <= STATE_WRITE_CONFIGURATIONS_DONE;
+                    end else begin
+                        config_cnt <= config_cnt + 1;
+                        oled_state <= STATE_WRITE_CONFIGURATIONS;
+                    end
+
+                end else if (next_data_count == 0) begin
+                    // $display("data:%02h,next_data_count:%02h,max:%02h", data, next_data_count,
+                    //  next_data_count_max);
+                    data_count <= MAX_BYTE;
+                    next_data_count <= next_data_count + 1;
+                    oled_state <= STATE_PREPARE_WRITE_REG;
+                end else begin
+                    // $display("data:%02h,next_data_count:%02h,max:%02h", data, next_data_count,
+                    //  next_data_count_max);
+                    data_count <= MAX_BYTE;
+                    next_data_count <= next_data_count + 1;
+                    oled_state <= STATE_PREPARE_WRITE_DATA;
+                end
             end
 
             STATE_WRITE_CONFIGURATIONS_DONE: begin
@@ -611,6 +682,24 @@ module ST7735 #(
                 MOSI <= color[data_count];
                 if (data_count == 0) begin
                     data_count <= 15;
+                    // current_pixel <= current_pixel + 1;
+                    // if (current_pixel == WIDTH * HEIGHT) begin
+                    //     current_pixel <= 0;
+                    //     config_cnt <= CONFIG_2A;
+                    //     oled_state <= STATE_WRITE_CONFIGURATIONS;
+                    // end
+                    // color_x <= color_x + 1;
+                    // if (color_x >= WIDTH) begin
+                    //     color_x <= 0;
+                    //     color_y <= color_y + 1;
+                    // end
+                    // if (color_y >= HEIGHT) begin
+                    //     color_x <= 0;
+                    //     color_y <= 0;
+                    //     current_pixel <= 0;
+                    //     config_cnt <= CONFIG_2A;
+                    //     oled_state <= STATE_WRITE_CONFIGURATIONS;
+                    // end
                     if (color_y < HEIGHT - 1) begin
                         color_x <= color_x + 1;
                         if (color_x > WIDTH - 1) begin
@@ -635,6 +724,12 @@ module ST7735 #(
                 MOSI <= color[data_count];
                 if (data_count == 0) begin
                     data_count <= 15;
+                    // current_pixel <= current_pixel + 1;
+                    // if (current_pixel == WIDTH * HEIGHT) begin
+                    //     current_pixel <= 0;
+                    //     oled_state <= STATE_PRINT_COLOR;
+                    // end
+
                     if (color_y < HEIGHT - 1) begin
                         color_x <= color_x + 1;
                         if (color_x > WIDTH - 1) begin
