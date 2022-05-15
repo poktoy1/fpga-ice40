@@ -6,14 +6,16 @@ module ST7735 #(
     parameter WIDTH = 160,
     parameter HEIGHT = 120
 ) (
-    input  wire SYSTEM_CLK,
-    input [15:0] color,
+    input wire SYSTEM_CLK,
+    input wire [15:0] color_pixel,
+    input wire WRITE_EN,
+    output wire IS_BUSY,
     output wire LCD_READY,
-    output reg  CS,
-    output reg  MOSI,
-    output reg  DC,
-    output reg  LCD_CLK,
-    output reg  RESET
+    output reg CS,
+    output reg MOSI,
+    output reg DC,
+    output reg LCD_CLK,
+    output reg RESET
 );
 
 
@@ -89,9 +91,10 @@ module ST7735 #(
     reg [$clog2(WIDTH):0] color_x = 0;
     reg [$clog2(HEIGHT):0] color_y = 0;
     reg init_frame_done = 0;
+    reg is_busy = HIGH;
 
     assign LCD_READY = init_frame_done;
-
+    assign IS_BUSY   = is_busy;
     initial begin
         CS = HIGH;
         MOSI = HIGH;
@@ -122,7 +125,7 @@ module ST7735 #(
     DelayCounter #(
         .CLOCK_SPEED_MHZ(CLOCK_SPEED_MHZ),
         // .US_DELAY(120000)
-        .US_DELAY(DELAY_US/2)
+        .US_DELAY(DELAY_US / 2)
     ) _lcd_delay (
         .CLK  (LCD_CLK),
         .out  (lcd_delay_out),
@@ -172,7 +175,7 @@ module ST7735 #(
                     next_data_count <= 0;
                     data_count <= MAX_BYTE;
                     oled_state <= STATE_11_REG;
-                end 
+                end
             end
 
             STATE_11_REG: begin
@@ -496,6 +499,7 @@ module ST7735 #(
                     CONFIG_2A: begin
                         // next_data_count_max <= 5;
                         // data <= config_2a[next_data_count];
+                        
                         MOSI <= config_2a[next_data_count][data_count];
                         CS   <= LOW;
                         if (next_data_count > 0) begin
@@ -557,21 +561,24 @@ module ST7735 #(
                 CS <= HIGH;
                 data_count <= 15;
                 next_data_count <= 0;
-                if (init_frame_done) begin
-                    oled_state <= STATE_WAIT_FOR_DATA;
-                end else begin
-                    oled_state <= STATE_INIT_FRAME;
-                end
-
+                color_x <= 0;
+                color_y <= 0;
+                // if (init_frame_done) begin
+                //     oled_state <= STATE_WAIT_FOR_DATA;
+                // end else begin
+                //     oled_state <= STATE_INIT_FRAME;
+                // end
+                oled_state <= STATE_INIT_FRAME;
             end
 
             STATE_INIT_FRAME: begin
-                DC   <= HIGH;
-                CS   <= LOW;
-                MOSI <= color[data_count];
+                DC <= HIGH;
+                CS <= LOW;
+                MOSI <= color_pixel[data_count];
+                
                 if (data_count == 0) begin
                     data_count <= 15;
-                    
+
                     if (color_y < HEIGHT - 1) begin
                         color_x <= color_x + 1;
                         if (color_x > WIDTH - 1) begin
@@ -581,20 +588,34 @@ module ST7735 #(
                     end else begin
                         color_x <= 0;
                         color_y <= 0;
-                        config_cnt <= CONFIG_2A;
+                        // config_cnt <= CONFIG_2A;
                         init_frame_done <= HIGH;
-                        oled_state <= STATE_WRITE_CONFIGURATIONS;
+                        is_busy <= LOW;
+                        oled_state <= STATE_WAIT_FOR_DATA;
                     end
                 end
-                
+
 
             end
 
             STATE_WAIT_FOR_DATA: begin
-                oled_state <= STATE_IDLE;
+                if (WRITE_EN == HIGH) begin
+                    CS <= HIGH;
+                    
+                    if (is_busy == LOW) begin
+                        is_busy <= HIGH;
+                        data_count <= MAX_BYTE;
+                        next_data_count <= 0;
+                        color_x <= 0;
+                        color_y <= 0;
+                        config_cnt <= CONFIG_2A;
+                        oled_state <= STATE_WRITE_CONFIGURATIONS;
+                    end
+
+                end
             end
 
-         
+
 
         endcase
     end
