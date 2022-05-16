@@ -600,7 +600,6 @@ module ST7735 #(
 
             STATE_WAIT_FOR_DATA: begin
                 if (WRITE_EN == HIGH) begin
-                    CS <= HIGH;
                     
                     if (is_busy == LOW) begin
                         is_busy <= HIGH;

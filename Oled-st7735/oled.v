@@ -16,15 +16,31 @@ module Oled (
     wire is_lcd_ready;
     wire is_busy;
     reg [15:0] color_pixel;
+    reg [4:0] red;
+    reg [5:0] green;
+    reg [4:0] blue;
     reg write_en;
     wire blink;
+    reg [$clog2(3):0] color_state;
+
+    localparam STATE_BLUE = 0;
+    localparam STATE_GREEN = 1;
+    localparam STATE_RED = 2;
+    localparam STATE_ALL = 3;
 
     // assign blink = LED_STAT;
-
+    assign is_lcd_ready = LED_STAT;
 
     initial begin
-        color_pixel = 16'hff00;
+        red = 0;
+        green = 0;
+        blue = 0;
         write_en = 1'b0;
+        color_state = 1'b0;
+    end
+
+    always @(posedge SYSTEM_CLK) begin
+        color_pixel <= {red, green, blue};
     end
 
     ST7735 _st7735 (
@@ -42,25 +58,71 @@ module Oled (
 
     ClockDivider #(
         .CLOCK_SPEED_MHZ(12),
-        .US_DELAY(1000000)
+        .US_DELAY(500000)
     ) _blinker (
         .out(blink),
         .CLK(SYSTEM_CLK)
     );
 
     always @(posedge LCD_CLK) begin
-        write_en <= (is_lcd_ready && (is_busy == 0));
+        // write_en <= (is_lcd_ready && (is_busy == 0));
+        if (is_lcd_ready) begin
+            write_en <= 1;
+        end
     end
 
 
-    always @(posedge LCD_CLK) begin
-        if (is_busy  == 1'b0) begin
-            color_pixel <= color_pixel + 1;
-            if (color_pixel >= 16'hffff) begin
-                color_pixel <= 0;
-                LED_STAT <= ~LED_STAT;
+    always @(negedge is_busy) begin
+
+        case (color_state)
+
+            STATE_BLUE: begin
+                blue <= blue + 1;
+                if (blue == 5'b11111) begin
+                    blue <= 0;
+                    color_state <= STATE_GREEN;
+                end
             end
-        end
+
+            STATE_GREEN: begin
+                green <= green + 1;
+                if (green == 6'b111111) begin
+                    green <= 0;
+                    color_state <= STATE_RED;
+                end
+            end
+
+            STATE_RED: begin
+                red <= red + 1;
+                if (red == 5'b11111) begin
+                    red <= 0;
+                    color_state <= STATE_ALL;
+                end
+            end
+
+            STATE_ALL: begin
+                if (red < 5'b11111) begin
+                    red <= red + 1;
+                end
+                if (green < 6'b111111) begin
+                    green <= green + 1;
+                end
+                if (blue < 5'b11111) begin
+                    blue <= blue + 1;
+                end
+
+                if (color_pixel == 16'hffff) begin
+                    red <= 0;
+                    green <= 0;
+                    blue <= 0;
+                    color_state <= STATE_BLUE;
+                end
+
+
+            end
+
+        endcase
+
 
     end
 
