@@ -28,8 +28,7 @@ module Oled (
     localparam STATE_RED = 2;
     localparam STATE_ALL = 3;
 
-    // assign blink = LED_STAT;
-    assign is_lcd_ready = LED_STAT;
+    assign blink = LED_STAT;
 
     initial begin
         red = 0;
@@ -79,7 +78,7 @@ module Oled (
             STATE_BLUE: begin
                 blue <= blue + 1;
                 if (blue == 5'b11111) begin
-                    blue <= 0;
+                    // blue <= 0;
                     color_state <= STATE_GREEN;
                 end
             end
@@ -87,7 +86,7 @@ module Oled (
             STATE_GREEN: begin
                 green <= green + 1;
                 if (green == 6'b111111) begin
-                    green <= 0;
+                    // green <= 0;
                     color_state <= STATE_RED;
                 end
             end
@@ -95,7 +94,7 @@ module Oled (
             STATE_RED: begin
                 red <= red + 1;
                 if (red == 5'b11111) begin
-                    red <= 0;
+                    // red <= 0;
                     color_state <= STATE_ALL;
                 end
             end
