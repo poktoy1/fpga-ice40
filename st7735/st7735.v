@@ -127,7 +127,7 @@ module ST7735 #(
         $readmemh("fc_config.dat", config_fc);
         $readmemh("3a_config.dat", config_3a);
         $readmemh("36_config.dat", config_36);
-      
+
 
     end
 
@@ -618,9 +618,9 @@ module ST7735 #(
                 if (data_count == 0) begin
                     data_count <= 15;
 
-                    if (color_y < color_y_end - 1) begin
+                    if (color_y < color_y_end) begin
                         color_x <= color_x + 1;
-                        if (color_x > color_x_end - 1) begin
+                        if (color_x > color_x_end) begin
                             color_x <= 0;
                             color_y <= color_y + 1;
                         end
