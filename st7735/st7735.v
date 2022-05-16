@@ -9,6 +9,8 @@ module ST7735 #(
     input wire SYSTEM_CLK,
     input wire [15:0] color_pixel,
     input wire WRITE_EN,
+    input [$clog2(WIDTH):0] COLOR_X,
+    input [$clog2(HEIGHT):0] COLOR_Y,
     output wire IS_BUSY,
     output wire LCD_READY,
     output reg CS,
@@ -95,6 +97,8 @@ module ST7735 #(
 
     assign LCD_READY = init_frame_done;
     assign IS_BUSY   = is_busy;
+    
+    
     initial begin
         CS = HIGH;
         MOSI = HIGH;
@@ -136,7 +140,7 @@ module ST7735 #(
     always @(posedge SYSTEM_CLK) begin
 
         LCD_CLK <= ~LCD_CLK;
-
+        
     end
 
 
@@ -499,7 +503,7 @@ module ST7735 #(
                     CONFIG_2A: begin
                         // next_data_count_max <= 5;
                         // data <= config_2a[next_data_count];
-                        
+
                         MOSI <= config_2a[next_data_count][data_count];
                         CS   <= LOW;
                         if (next_data_count > 0) begin
@@ -561,8 +565,8 @@ module ST7735 #(
                 CS <= HIGH;
                 data_count <= 15;
                 next_data_count <= 0;
-                color_x <= 0;
-                color_y <= 0;
+                // color_x <= 0;
+                // color_y <= 0;
                 // if (init_frame_done) begin
                 //     oled_state <= STATE_WAIT_FOR_DATA;
                 // end else begin
@@ -572,10 +576,10 @@ module ST7735 #(
             end
 
             STATE_INIT_FRAME: begin
-                DC <= HIGH;
-                CS <= LOW;
+                DC   <= HIGH;
+                CS   <= LOW;
                 MOSI <= color_pixel[data_count];
-                
+
                 if (data_count == 0) begin
                     data_count <= 15;
 
@@ -600,13 +604,13 @@ module ST7735 #(
 
             STATE_WAIT_FOR_DATA: begin
                 if (WRITE_EN == HIGH) begin
-                    
+
                     if (is_busy == LOW) begin
                         is_busy <= HIGH;
                         data_count <= MAX_BYTE;
                         next_data_count <= 0;
-                        color_x <= 0;
-                        color_y <= 0;
+                        color_x <= COLOR_X;
+                        color_y <= COLOR_Y;
                         config_cnt <= CONFIG_2A;
                         oled_state <= STATE_WRITE_CONFIGURATIONS;
                     end

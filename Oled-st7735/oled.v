@@ -22,11 +22,15 @@ module Oled (
     reg write_en;
     wire blink;
     reg [$clog2(3):0] color_state;
+    reg [$clog2(WIDTH):0] color_x = 0;
+    reg [$clog2(HEIGHT):0] color_y = 0;
 
     localparam STATE_BLUE = 0;
     localparam STATE_GREEN = 1;
     localparam STATE_RED = 2;
     localparam STATE_ALL = 3;
+    localparam HEIGHT = 120;
+    localparam WIDTH = 160;
 
     assign blink = LED_STAT;
 
@@ -42,9 +46,14 @@ module Oled (
         color_pixel <= {red, green, blue};
     end
 
-    ST7735 _st7735 (
+    ST7735 #(
+        .WIDTH (WIDTH),
+        .HEIGHT(HEIGHT)
+    ) _st7735 (
         .SYSTEM_CLK(SYSTEM_CLK),
         .color_pixel(color_pixel),
+        .COLOR_X(color_x),
+        .COLOR_Y(color_y),
         .WRITE_EN(write_en),
         .IS_BUSY(is_busy),
         .LCD_READY(is_lcd_ready),
@@ -78,7 +87,7 @@ module Oled (
             STATE_BLUE: begin
                 blue <= blue + 1;
                 if (blue == 5'b11111) begin
-                    // blue <= 0;
+                    blue <= 0;
                     color_state <= STATE_GREEN;
                 end
             end
@@ -86,7 +95,7 @@ module Oled (
             STATE_GREEN: begin
                 green <= green + 1;
                 if (green == 6'b111111) begin
-                    // green <= 0;
+                    green <= 0;
                     color_state <= STATE_RED;
                 end
             end
@@ -94,8 +103,11 @@ module Oled (
             STATE_RED: begin
                 red <= red + 1;
                 if (red == 5'b11111) begin
-                    // red <= 0;
+                    red <= 0;
+                    color_x <= 100;
+                    color_y <= 50;
                     color_state <= STATE_ALL;
+
                 end
             end
 
