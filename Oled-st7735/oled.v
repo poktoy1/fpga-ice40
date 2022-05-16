@@ -22,17 +22,20 @@ module Oled (
     reg write_en;
     wire blink;
     reg [$clog2(3):0] color_state;
-    reg [$clog2(WIDTH):0] color_x = 0;
-    reg [$clog2(HEIGHT):0] color_y = 0;
+    reg [15:0] color_x = 0;
+    reg [15:0] color_y = 0;
+    reg [15:0] color_x_end = WIDTH;
+    reg [15:0] color_y_end = HEIGHT;
 
     localparam STATE_BLUE = 0;
     localparam STATE_GREEN = 1;
     localparam STATE_RED = 2;
-    localparam STATE_ALL = 3;
+    localparam STATE_SQUARE = 3;
     localparam HEIGHT = 120;
     localparam WIDTH = 160;
 
     assign blink = LED_STAT;
+    // assign is_lcd_ready = LED_STAT;
 
     initial begin
         red = 0;
@@ -54,6 +57,8 @@ module Oled (
         .color_pixel(color_pixel),
         .COLOR_X(color_x),
         .COLOR_Y(color_y),
+        .COLOR_X_END(color_x_end),
+        .COLOR_Y_END(color_y_end),
         .WRITE_EN(write_en),
         .IS_BUSY(is_busy),
         .LCD_READY(is_lcd_ready),
@@ -106,12 +111,14 @@ module Oled (
                     red <= 0;
                     color_x <= 100;
                     color_y <= 50;
-                    color_state <= STATE_ALL;
+                    color_x_end <= 150;
+                    color_y_end <= 100;
+                    color_state <= STATE_SQUARE;
 
                 end
             end
 
-            STATE_ALL: begin
+            STATE_SQUARE: begin
                 if (red < 5'b11111) begin
                     red <= red + 1;
                 end

@@ -9,8 +9,10 @@ module ST7735 #(
     input wire SYSTEM_CLK,
     input wire [15:0] color_pixel,
     input wire WRITE_EN,
-    input [$clog2(WIDTH):0] COLOR_X,
-    input [$clog2(HEIGHT):0] COLOR_Y,
+    input wire [15:0] COLOR_X,
+    input wire [15:0] COLOR_Y,
+    input wire [15:0] COLOR_X_END,
+    input wire [15:0] COLOR_Y_END,
     output wire IS_BUSY,
     output wire LCD_READY,
     output reg CS,
@@ -82,23 +84,26 @@ module ST7735 #(
     reg [7:0] config_fc[0:1];
     reg [7:0] config_3a[0:1];
     reg [7:0] config_36[0:1];
-    reg [7:0] config_2a[0:4];
-    reg [7:0] config_2b[0:4];
+    localparam [7:0] config_2a = 8'h2a;
+    localparam [7:0] config_2b = 8'h2b;
     reg [7:0] config_21 = 8'h21;
     reg [7:0] config_29 = 8'h29;
     reg [7:0] config_2c = 8'h2c;
     reg [7:0] config_set_address[0:6];
     reg [7:0] config_cnt = CONFIG_B1;
 
-    reg [$clog2(WIDTH):0] color_x = 0;
-    reg [$clog2(HEIGHT):0] color_y = 0;
+    reg [15:0] color_x = 0;
+    reg [15:0] color_y;
+    reg [15:0] color_x_end = WIDTH;
+    reg [15:0] color_y_end = HEIGHT;
+    reg [7:0] temp_reg = 0;
     reg init_frame_done = 0;
     reg is_busy = HIGH;
 
     assign LCD_READY = init_frame_done;
     assign IS_BUSY   = is_busy;
-    
-    
+
+
     initial begin
         CS = HIGH;
         MOSI = HIGH;
@@ -106,6 +111,7 @@ module ST7735 #(
         LCD_CLK = HIGH;
         RESET = HIGH;
         data_count = MAX_BYTE;
+
         $readmemh("b1_config.dat", config_b1);
         $readmemh("b2_config.dat", config_b2);
         $readmemh("b3_config.dat", config_b3);
@@ -121,8 +127,7 @@ module ST7735 #(
         $readmemh("fc_config.dat", config_fc);
         $readmemh("3a_config.dat", config_3a);
         $readmemh("36_config.dat", config_36);
-        $readmemh("2a_config.dat", config_2a);
-        $readmemh("2b_config.dat", config_2b);
+      
 
     end
 
@@ -140,7 +145,7 @@ module ST7735 #(
     always @(posedge SYSTEM_CLK) begin
 
         LCD_CLK <= ~LCD_CLK;
-        
+
     end
 
 
@@ -496,6 +501,7 @@ module ST7735 #(
                             next_data_count <= next_data_count + 1;
                             if (next_data_count == 0) begin
                                 next_data_count <= 0;
+                                temp_reg <= config_2a;
                                 config_cnt <= CONFIG_2A;
                             end
                         end
@@ -504,36 +510,73 @@ module ST7735 #(
                         // next_data_count_max <= 5;
                         // data <= config_2a[next_data_count];
 
-                        MOSI <= config_2a[next_data_count][data_count];
+                        MOSI <= temp_reg[data_count];
                         CS   <= LOW;
                         if (next_data_count > 0) begin
                             DC <= HIGH;
                         end
+
                         if (data_count == 0) begin
                             data_count <= MAX_BYTE;
+                            case (next_data_count)
+                                0: begin
+                                    temp_reg <= color_x[15:8];
+                                end
+                                1: begin
+                                    temp_reg <= color_x[7:0];
+                                end
+                                2: begin
+                                    temp_reg <= color_x_end[15:8];
+                                end
+                                3: begin
+                                    temp_reg <= color_x_end[7:0];
+                                end
+                            endcase
                             next_data_count <= next_data_count + 1;
                             if (next_data_count == 4) begin
                                 next_data_count <= 0;
+                                temp_reg <= config_2b;
                                 config_cnt <= CONFIG_2B;
                             end
+
                         end
+
                     end
                     CONFIG_2B: begin
                         // next_data_count_max <= 5;
                         // data <= config_2b[next_data_count];
-                        MOSI <= config_2b[next_data_count][data_count];
+
+                        MOSI <= temp_reg[data_count];
                         CS   <= LOW;
                         if (next_data_count > 0) begin
                             DC <= HIGH;
                         end
+
                         if (data_count == 0) begin
                             data_count <= MAX_BYTE;
+                            case (next_data_count)
+                                0: begin
+                                    temp_reg <= color_y[15:8];
+                                end
+                                1: begin
+                                    temp_reg <= color_y[7:0];
+                                end
+                                2: begin
+                                    temp_reg <= color_y_end[15:8];
+                                end
+                                3: begin
+                                    temp_reg <= color_y_end[7:0];
+                                end
+                            endcase
                             next_data_count <= next_data_count + 1;
                             if (next_data_count == 4) begin
                                 next_data_count <= 0;
                                 config_cnt <= CONFIG_2C;
                             end
+
                         end
+
+
                     end
                     CONFIG_2C: begin
                         // next_data_count_max <= 1;
@@ -548,7 +591,6 @@ module ST7735 #(
                             next_data_count <= next_data_count + 1;
                             if (next_data_count == 0) begin
                                 next_data_count <= 0;
-                                // config_cnt <= CONFIG_2A;
                                 oled_state <= STATE_WRITE_CONFIGURATIONS_DONE;
                             end
                         end
@@ -565,13 +607,6 @@ module ST7735 #(
                 CS <= HIGH;
                 data_count <= 15;
                 next_data_count <= 0;
-                // color_x <= 0;
-                // color_y <= 0;
-                // if (init_frame_done) begin
-                //     oled_state <= STATE_WAIT_FOR_DATA;
-                // end else begin
-                //     oled_state <= STATE_INIT_FRAME;
-                // end
                 oled_state <= STATE_INIT_FRAME;
             end
 
@@ -583,16 +618,13 @@ module ST7735 #(
                 if (data_count == 0) begin
                     data_count <= 15;
 
-                    if (color_y < HEIGHT - 1) begin
+                    if (color_y < color_y_end - 1) begin
                         color_x <= color_x + 1;
-                        if (color_x > WIDTH - 1) begin
+                        if (color_x > color_x_end - 1) begin
                             color_x <= 0;
                             color_y <= color_y + 1;
                         end
                     end else begin
-                        color_x <= 0;
-                        color_y <= 0;
-                        // config_cnt <= CONFIG_2A;
                         init_frame_done <= HIGH;
                         is_busy <= LOW;
                         oled_state <= STATE_WAIT_FOR_DATA;
@@ -611,6 +643,9 @@ module ST7735 #(
                         next_data_count <= 0;
                         color_x <= COLOR_X;
                         color_y <= COLOR_Y;
+                        color_x_end <= COLOR_X_END;
+                        color_y_end <= COLOR_Y_END;
+                        temp_reg <= config_2a;
                         config_cnt <= CONFIG_2A;
                         oled_state <= STATE_WRITE_CONFIGURATIONS;
                     end
